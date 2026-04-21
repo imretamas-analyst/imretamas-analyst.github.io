@@ -1,1 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Performance System — Tamás Imre</title>
+  <meta name="description" content="End-to-end sales performance and territory management system that reduced bonus processing from 5 days to 1 day." />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
 
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo mono">tamás imre</a>
+    <ul class="nav-links">
+      <li><a href="/#projects">projects</a></li>
+      <li><a href="/#experience">experience</a></li>
+      <li><a href="/#skills">skills</a></li>
+      <li><a href="mailto:imre.tamas@gmail.com">contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <a href="/" class="back-link">← back to portfolio</a>
+
+  <section class="project-hero fade-up">
+    <p class="project-hero-meta">UPC Broadband · Budapest · 2008</p>
+    <h1><strong>Sales Performance</strong><br>&amp; Territory Management System</h1>
+    <p class="project-hero-desc">
+      Built an end-to-end system measuring sales rep performance by flat-level assignments and conversion rates. Automated bonus calculations, eliminated biased performance metrics, and reduced monthly processing time by 80%.
+    </p>
+    <div class="tag-row">
+      <span class="tag">SQL Server</span>
+      <span class="tag">BRIO</span>
+      <span class="tag">Automation</span>
+      <span class="tag">Sales Analytics</span>
+      <span class="tag">Territory Management</span>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Project at a glance</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Processing time</div>
+        <div class="stat-value">80%</div>
+        <div class="stat-sub">reduction — 5 days → 1 day</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Manual hours saved</div>
+        <div class="stat-value">30h</div>
+        <div class="stat-sub">per month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Bias eliminated</div>
+        <div class="stat-value">Yes</div>
+        <div class="stat-sub">cherry-picking removed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Stack</div>
+        <div class="stat-value">SQL</div>
+        <div class="stat-sub">SQL Server · BRIO</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Problem</div>
+    <div class="content-block">
+      <h2>Manual, biased, and slow</h2>
+      <p>Sales bonus calculations at UPC Broadband were done manually every month — a process that took 5 to 6 working days and was prone to errors. Worse, the existing performance metrics allowed reps to cherry-pick the easiest territories, skewing results and making fair comparison impossible.</p>
+      <p>Management had no reliable way to compare rep performance across territories or identify where coverage gaps existed.</p>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Solution</div>
+    <div class="content-block">
+      <h2>Flat-level assignment tracking</h2>
+      <p>The system tracked performance at the individual flat (apartment unit) level — each rep was assigned specific flats, and conversions were measured against that exact territory. This eliminated the ability to cherry-pick easy areas and made performance metrics genuinely comparable.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-label">SQL Server · rep_performance.sql</div>
+      <pre><span class="code-cm">-- Rep performance by assigned territory</span>
+<span class="code-kw">WITH</span> assignments <span class="code-kw">AS</span> (
+  <span class="code-kw">SELECT</span>
+    rep_id,
+    flat_id,
+    assignment_date,
+    <span class="code-fn">COUNT</span>(flat_id) <span class="code-kw">OVER</span> (
+      <span class="code-kw">PARTITION BY</span> rep_id
+    )               <span class="code-kw">AS</span> total_assigned_flats
+  <span class="code-kw">FROM</span> territory_assignments
+  <span class="code-kw">WHERE</span> month = @target_month
+),
+
+conversions <span class="code-kw">AS</span> (
+  <span class="code-kw">SELECT</span>
+    rep_id,
+    flat_id,
+    sale_date,
+    product_type,
+    contract_value
+  <span class="code-kw">FROM</span> sales
+  <span class="code-kw">WHERE</span> month = @target_month
+)
+
+<span class="code-kw">SELECT</span>
+  a.rep_id,
+  r.rep_name,
+  r.region,
+  a.total_assigned_flats,
+  <span class="code-fn">COUNT</span>(c.flat_id)          <span class="code-kw">AS</span> total_conversions,
+  <span class="code-fn">SUM</span>(c.contract_value)    <span class="code-kw">AS</span> total_revenue,
+
+  <span class="code-cm">-- Conversion rate against assigned territory</span>
+  <span class="code-fn">ROUND</span>(
+    <span class="code-fn">COUNT</span>(c.flat_id) * <span class="code-nu">100.0</span>
+      / <span class="code-fn">NULLIF</span>(a.total_assigned_flats, <span class="code-nu">0</span>),
+    <span class="code-nu">2</span>
+  )                          <span class="code-kw">AS</span> conversion_rate_pct,
+
+  <span class="code-cm">-- Bonus calculation</span>
+  <span class="code-kw">CASE</span>
+    <span class="code-kw">WHEN</span> conversion_rate_pct >= <span class="code-nu">15</span> <span class="code-kw">THEN</span> <span class="code-fn">SUM</span>(c.contract_value) * <span class="code-nu">0.08</span>
+    <span class="code-kw">WHEN</span> conversion_rate_pct >= <span class="code-nu">10</span> <span class="code-kw">THEN</span> <span class="code-fn">SUM</span>(c.contract_value) * <span class="code-nu">0.05</span>
+    <span class="code-kw">ELSE</span>                              <span class="code-fn">SUM</span>(c.contract_value) * <span class="code-nu">0.03</span>
+  <span class="code-kw">END AS</span> bonus_amount
+
+<span class="code-kw">FROM</span> assignments a
+<span class="code-kw">JOIN</span> reps r          <span class="code-kw">ON</span> a.rep_id = r.rep_id
+<span class="code-kw">LEFT JOIN</span> conversions c
+  <span class="code-kw">ON</span> a.rep_id = c.rep_id
+  <span class="code-kw">AND</span> a.flat_id = c.flat_id
+<span class="code-kw">GROUP BY</span>
+  a.rep_id, r.rep_name, r.region,
+  a.total_assigned_flats
+<span class="code-kw">ORDER BY</span> conversion_rate_pct <span class="code-kw">DESC</span></pre>
+    </div>
+
+    <div class="content-block">
+      <h2>BRIO frontend for management</h2>
+      <p>The SQL layer was surfaced through a BRIO reporting frontend, giving managers a monthly performance dashboard. Territory coverage gaps were visible at a glance, and the bonus figures were auto-calculated — no manual spreadsheet work required.</p>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Outcome</div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">80% time reduction</div>
+        <div class="finding-text">Monthly bonus processing dropped from 5–6 days to a single day — fully automated from source data</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Fair metrics</div>
+        <div class="finding-text">Flat-level tracking eliminated cherry-picking behaviour and made rep performance genuinely comparable</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Coverage visibility</div>
+        <div class="finding-text">Management could identify underserved territories and rebalance assignments proactively</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="contact-links">
+      <a href="mailto:imre.tamas@gmail.com" class="contact-link">
+        <span class="contact-dot"></span> imre.tamas@gmail.com
+      </a>
+      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank" rel="noopener">
+        <span class="contact-dot"></span> LinkedIn
+      </a>
+      <a href="https://github.com/imrepocok" class="contact-link" target="_blank" rel="noopener">
+        <span class="contact-dot"></span> GitHub
+      </a>
+    </div>
+    <span class="footer-copy mono">Berlin, Germany</span>
+  </div>
+</footer>
+
+</body>
+</html>
