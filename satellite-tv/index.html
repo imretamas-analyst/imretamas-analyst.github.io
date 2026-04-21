@@ -1,1 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Satellite TV Targeting — Tamás Imre</title>
+  <meta name="description" content="Geospatial market analysis identifying high-potential satellite TV expansion markets across Hungary." />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
 
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo mono">tamás imre</a>
+    <ul class="nav-links">
+      <li><a href="/#projects">projects</a></li>
+      <li><a href="/#experience">experience</a></li>
+      <li><a href="/#skills">skills</a></li>
+      <li><a href="mailto:imre.tamas@gmail.com">contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <a href="/" class="back-link">← back to portfolio</a>
+
+  <section class="project-hero fade-up">
+    <p class="project-hero-meta">UPC Broadband · Budapest · 2007</p>
+    <h1><strong>Satellite TV</strong><br>Customer Targeting Analysis</h1>
+    <p class="project-hero-desc">
+      Built a geospatial analysis to identify high-potential markets for satellite TV expansion across 3,000+ Hungarian settlements — combining competitor coverage data, household income, and existing customer locations into strategic heatmaps.
+    </p>
+    <div class="tag-row">
+      <span class="tag">SQL Server</span>
+      <span class="tag">MapInfo</span>
+      <span class="tag">Geospatial Analysis</span>
+      <span class="tag">Market Expansion</span>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Project at a glance</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Settlements analysed</div>
+        <div class="stat-value">3,000+</div>
+        <div class="stat-sub">across Hungary</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Data sources</div>
+        <div class="stat-value">3</div>
+        <div class="stat-sub">merged via SQL</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Tools</div>
+        <div class="stat-value">SQL</div>
+        <div class="stat-sub">SQL Server · MapInfo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Outcome</div>
+        <div class="stat-value">Growth</div>
+        <div class="stat-sub">revitalised subscription</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Problem</div>
+    <div class="content-block">
+      <h2>Finding underserved markets before competitors did</h2>
+      <p>UPC Broadband needed to expand satellite TV coverage but had limited budget to target all settlements equally. The challenge was identifying which areas had the highest potential — high household income, low competitor presence, and proximity to existing customers — without expensive field research.</p>
+      <p>This was an early-stage data-driven project in 2007, when the tooling was limited and the approach had to be built from scratch.</p>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Approach</div>
+    <div class="content-block">
+      <h2>Integrating three data sources</h2>
+      <ul>
+        <li>Competitor cable coverage maps — scraped and geocoded by settlement</li>
+        <li>Household income data — sourced from public statistical records</li>
+        <li>Existing UPC customer locations — from internal CRM database</li>
+      </ul>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-label">SQL Server · settlement_scoring.sql</div>
+      <pre><span class="code-cm">-- Score each settlement by expansion potential</span>
+<span class="code-kw">SELECT</span>
+  s.settlement_id,
+  s.settlement_name,
+  s.county,
+  s.population,
+  i.avg_household_income,
+  c.competitor_coverage_pct,
+  <span class="code-fn">COUNT</span>(cu.customer_id)       <span class="code-kw">AS</span> existing_customers,
+
+  <span class="code-cm">-- Composite score: high income, low competition, existing base</span>
+  (i.avg_household_income / <span class="code-nu">1000</span>)
+    * (<span class="code-nu">1</span> - c.competitor_coverage_pct)
+    * <span class="code-fn">LOG</span>(<span class="code-fn">COUNT</span>(cu.customer_id) + <span class="code-nu">1</span>)
+                              <span class="code-kw">AS</span> expansion_score
+
+<span class="code-kw">FROM</span> settlements s
+<span class="code-kw">LEFT JOIN</span> income_data i
+  <span class="code-kw">ON</span> s.settlement_id = i.settlement_id
+<span class="code-kw">LEFT JOIN</span> competitor_coverage c
+  <span class="code-kw">ON</span> s.settlement_id = c.settlement_id
+<span class="code-kw">LEFT JOIN</span> customers cu
+  <span class="code-kw">ON</span> s.settlement_id = cu.settlement_id
+<span class="code-kw">GROUP BY</span>
+  s.settlement_id, s.settlement_name, s.county,
+  s.population, i.avg_household_income,
+  c.competitor_coverage_pct
+<span class="code-kw">ORDER BY</span> expansion_score <span class="code-kw">DESC</span></pre>
+    </div>
+
+    <div class="content-block">
+      <h2>Visualisation in MapInfo</h2>
+      <p>The scored settlements were exported and visualised as a heatmap in MapInfo, layered over competitor coverage boundaries. This allowed the sales team to visually identify clusters of high-potential, underserved markets and plan targeted field campaigns.</p>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Outcome</div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Targeted campaigns</div>
+        <div class="finding-text">Sales team focused resources on top-scored settlements rather than blanket outreach</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Subscription growth</div>
+        <div class="finding-text">Identified high-potential underserved markets revitalised subscription growth in targeted regions</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Early data-driven culture</div>
+        <div class="finding-text">Demonstrated the value of combining multiple data sources for strategic decisions — rare in 2007</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="contact-links">
+      <a href="mailto:imre.tamas@gmail.com" class="contact-link">
+        <span class="contact-dot"></span> imre.tamas@gmail.com
+      </a>
+      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank" rel="noopener">
+        <span class="contact-dot"></span> LinkedIn
+      </a>
+      <a href="https://github.com/imrepocok" class="contact-link" target="_blank" rel="noopener">
+        <span class="contact-dot"></span> GitHub
+      </a>
+    </div>
+    <span class="footer-copy mono">Berlin, Germany</span>
+  </div>
+</footer>
+
+</body>
+</html>
