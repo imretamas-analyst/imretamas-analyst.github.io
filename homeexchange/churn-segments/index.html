@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HomeExchange Churn Analysis — Tamás Imre</title>
+  <meta name="description" content="End-to-end churn analysis for a home-swap travel platform using SQL, BigQuery, and customer segmentation." />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo mono">tamás imre</a>
+    <ul class="nav-links">
+      <li><a href="/#projects">projects</a></li>
+      <li><a href="/#experience">experience</a></li>
+      <li><a href="/#skills">skills</a></li>
+      <li><a href="mailto:imre.tamas@gmail.com">contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <a href="/" class="back-link">← back to portfolio</a>
+
+  <!-- Project hero -->
+  <section class="project-hero fade-up">
+    <p class="project-hero-meta">Le Wagon Bootcamp · 2025 · In progress</p>
+    <h1><strong>HomeExchange</strong><br>Churn Analysis</h1>
+    <p class="project-hero-desc">
+      HomeExchange is a home-swap travel platform where members pay an annual fee of €149 to access peer-to-peer house exchanges. The goal of this project is to understand why members do not renew their subscription and identify actionable levers to reduce churn.
+    </p>
+    <div class="tag-row">
+      <span class="tag chip-sql" style="background:var(--blue-bg);color:var(--blue-text);">SQL</span>
+      <span class="tag chip-bq" style="background:var(--amber-bg);color:var(--amber-text);">BigQuery</span>
+      <span class="tag chip-bi" style="background:var(--purple-bg);color:var(--purple-text);">Looker</span>
+      <span class="tag">Churn Modelling</span>
+      <span class="tag">Customer Segmentation</span>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="section fade-up">
+    <div class="section-label">Project at a glance</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Tables</div>
+        <div class="stat-value">2</div>
+        <div class="stat-sub">Subscriptions · Exchanges</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Data from</div>
+        <div class="stat-value">2019</div>
+        <div class="stat-sub">through 2022</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Duplicates found</div>
+        <div class="stat-value">276</div>
+        <div class="stat-sub">resolved via dedup CTE</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Churn driver</div>
+        <div class="stat-value">renew</div>
+        <div class="stat-sub">0 = churned · 1 = renewed</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Context -->
+  <section class="section fade-up">
+    <div class="section-label">Business context</div>
+    <div class="content-block">
+      <h2>How HomeExchange works</h2>
+      <p>Registration is free. The €149 annual membership only applies once a member secures their first exchange. This creates a distinct behavioural split: some users subscribe and never exchange (particularly American users), while European users tend to validate the system before committing.</p>
+      <p>This cultural difference is a key variable in the churn analysis — churn drivers are not uniform across geographies.</p>
+    </div>
+
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Potential churn drivers</div>
+        <div class="finding-text">User tenure · guest &amp; host activity · house location · sponsorship · promotional discounts</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">American users</div>
+        <div class="finding-text">Often subscribe without an immediate exchange — higher risk of early churn</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">European users</div>
+        <div class="finding-text">Tend to validate the system before subscribing — lower early churn but price-sensitive on renewal</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Data model -->
+  <section class="section fade-up">
+    <div class="section-label">Data model</div>
+    <div class="content-block">
+      <h2>Two source tables</h2>
+      <p>The <strong>subscriptions</strong> table contains one row per subscription event per user. Users who renew appear multiple times. The <strong>exchanges</strong> table contains conversation and exchange records — including reciprocal exchanges, which require careful counting to avoid double-counting.</p>
+    </div>
+
+    <div class="content-block">
+      <h2>Key data quality issues found</h2>
+      <ul>
+        <li>276 duplicate rows in the subscriptions table (same user, same subscription year)</li>
+        <li>Inconsistent <code>home_type</code> casing — "Home" vs "apartment"</li>
+        <li>Null values in <code>country</code>, <code>region</code>, <code>city</code> across both tables</li>
+        <li>Reciprocal exchanges create two exchange rows per conversation — requires deduplication logic</li>
+        <li><code>guest_count = 0</code> on several exchange rows despite completed exchanges</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- SQL: dedup -->
+  <section class="section fade-up">
+    <div class="section-label">Data cleaning — subscriptions</div>
+    <div class="content-block">
+      <h2>Deduplicated customer view</h2>
+      <p>The core challenge was normalising multiple subscription rows per user into a single customer record, preserving all relevant history. The query below produces one row per customer with engineered tenure, churn, and segment features.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-label">BigQuery SQL · customer_base.sql</div>
+      <pre><span class="code-kw">WITH</span> sub <span class="code-kw">AS</span> (
+  <span class="code-kw">SELECT</span>
+    user_id,
+    first_subscription_date        <span class="code-kw">AS</span> start_subscription_date,
+    <span class="code-fn">MIN</span>(subscription_date)          <span class="code-kw">AS</span> first_filed_subscription_date,
+    <span class="code-fn">MAX</span>(subscription_date)          <span class="code-kw">AS</span> last_subscription_date,
+    <span class="code-fn">MAX</span>(referral)                   <span class="code-kw">AS</span> total_referrals,
+    <span class="code-fn">SUM</span>(promotion)                  <span class="code-kw">AS</span> total_promotions,
+    <span class="code-fn">MAX</span>(payment3x)                  <span class="code-kw">AS</span> ever_used_payment3x,
+    <span class="code-fn">COUNT</span>(<span class="code-kw">DISTINCT</span> <span class="code-fn">EXTRACT</span>(
+      <span class="code-kw">YEAR FROM</span> subscription_date))  <span class="code-kw">AS</span> total_renewals_raw,
+    country, region, department, city
+  <span class="code-kw">FROM</span> home_exchange.subscriptions
+  <span class="code-kw">GROUP BY</span>
+    user_id, first_subscription_date,
+    country, region, department, city
+)
+
+<span class="code-kw">SELECT</span>
+  user_id,
+  start_subscription_date,
+  first_filed_subscription_date,
+  last_subscription_date,
+  total_referrals,
+  total_promotions,
+  ever_used_payment3x,
+
+  <span class="code-cm">-- Tenure: years as a member</span>
+  <span class="code-fn">DATE_DIFF</span>(
+    <span class="code-fn">DATE</span>(last_subscription_date),
+    <span class="code-fn">DATE</span>(start_subscription_date), <span class="code-kw">YEAR</span>
+  ) <span class="code-kw">AS</span> tenure_years,
+
+  <span class="code-cm">-- Renewals: years active minus starting year</span>
+  <span class="code-fn">DATE_DIFF</span>(
+    <span class="code-fn">DATE</span>(last_subscription_date),
+    <span class="code-fn">DATE</span>(first_filed_subscription_date), <span class="code-kw">YEAR</span>
+  ) <span class="code-kw">AS</span> total_renewals,
+
+  <span class="code-cm">-- Churn flag: no renewal in past 13 months</span>
+  <span class="code-kw">CASE</span>
+    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(
+      <span class="code-fn">CURRENT_DATE</span>(),
+      <span class="code-fn">DATE</span>(last_subscription_date), <span class="code-kw">MONTH</span>
+    ) > <span class="code-nu">13</span> <span class="code-kw">THEN</span> <span class="code-nu">1</span>
+    <span class="code-kw">ELSE</span> <span class="code-nu">0</span>
+  <span class="code-kw">END AS</span> is_churned,
+
+  <span class="code-cm">-- Tenure bucket for segmentation</span>
+  <span class="code-kw">CASE</span>
+    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(..., <span class="code-kw">YEAR</span>) = <span class="code-nu">0</span>
+      <span class="code-kw">THEN</span> <span class="code-st">'0 – New'</span>
+    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(..., <span class="code-kw">YEAR</span>) <span class="code-kw">BETWEEN</span> <span class="code-nu">1</span> <span class="code-kw">AND</span> <span class="code-nu">2</span>
+      <span class="code-kw">THEN</span> <span class="code-st">'1–2 years'</span>
+    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(..., <span class="code-kw">YEAR</span>) <span class="code-kw">BETWEEN</span> <span class="code-nu">3</span> <span class="code-kw">AND</span> <span class="code-nu">5</span>
+      <span class="code-kw">THEN</span> <span class="code-st">'3–5 years'</span>
+    <span class="code-kw">ELSE</span> <span class="code-st">'6+ years'</span>
+  <span class="code-kw">END AS</span> tenure_bucket,
+
+  country, region, department, city
+<span class="code-kw">FROM</span> sub</pre>
+    </div>
+
+    <div class="content-block">
+      <h2>Why this approach</h2>
+      <ul>
+        <li><code>MAX(referral)</code> — if a user was ever referred, flag it regardless of which year</li>
+        <li><code>SUM(promotion)</code> — captures total promotions received across all subscriptions</li>
+        <li><code>DATE_DIFF(..., YEAR)</code> replaces a fragile <code>CASE WHEN EXTRACT(year) = 2021</code> fix — works correctly for all cohorts</li>
+        <li>13-month churn threshold accounts for annual billing + grace period</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Analysis pages -->
+  <section class="section fade-up">
+    <div class="section-label">Analysis</div>
+    <div class="projects-grid">
+
+      <a href="covid-travel/" class="project-card featured">
+        <div class="project-top">
+          <div>
+            <div class="project-title">Covid-19 impact on travel patterns</div>
+            <div class="project-org mono">Monthly breakdown · 2019–2022</div>
+          </div>
+          <span class="project-arrow">↗</span>
+        </div>
+        <p class="project-desc">
+          Domestic exchanges surged from 40% to 83.5% during peak Covid restrictions. Month-by-month analysis pinpoints the exact moment lockdowns hit and tracks the slow recovery toward pre-pandemic patterns.
+        </p>
+        <div class="chip-row">
+          <span class="chip chip-sql">SQL</span>
+          <span class="chip chip-bq">BigQuery</span>
+          <span class="chip chip-default">Travel Behaviour</span>
+          <span class="chip chip-default">Covid Analysis</span>
+        </div>
+      </a>
+
+      <div class="project-card" style="cursor:default;">
+        <div class="project-top">
+          <div>
+            <div class="project-title">Churn by customer segment</div>
+            <div class="project-org mono">In progress</div>
+          </div>
+        </div>
+        <p class="project-desc">
+          New customers churn at 56.6% — the highest of any segment. Second year is the crucial turning point. Analysis of what drives retention beyond year one.
+        </p>
+        <div class="chip-row">
+          <span class="chip chip-sql">SQL</span>
+          <span class="chip chip-default">Churn Modelling</span>
+          <span class="chip chip-default">Segmentation</span>
+        </div>
+      </div>
+
+      <div class="project-card" style="cursor:default;">
+        <div class="project-top">
+          <div>
+            <div class="project-title">Geographic churn — US vs Europe</div>
+            <div class="project-org mono">In progress</div>
+          </div>
+        </div>
+        <p class="project-desc">
+          Americans often subscribe without an immediate exchange — does this translate to higher churn? Continent-level analysis of retention behaviour.
+        </p>
+        <div class="chip-row">
+          <span class="chip chip-sql">SQL</span>
+          <span class="chip chip-default">Geography</span>
+          <span class="chip chip-default">Churn</span>
+        </div>
+      </div>
+
+    </div>
+    <p style="font-size:13px;color:var(--text-tertiary);font-family:'DM Mono',monospace;margin-top:1rem;">Analysis ongoing — new findings added as the project develops.</p>
+  </section>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="contact-links">
+      <a href="mailto:imre.tamas@gmail.com" class="contact-link">
+        <span class="contact-dot"></span> imre.tamas@gmail.com
+      </a>
+      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank" rel="noopener">
+        <span class="contact-dot"></span> LinkedIn
+      </a>
+      <a href="https://github.com/imrepocok" class="contact-link" target="_blank" rel="noopener">
+        <span class="contact-dot"></span> GitHub
+      </a>
+    </div>
+    <span class="footer-copy mono">Berlin, Germany</span>
+  </div>
+</footer>
+
+</body>
+</html>
