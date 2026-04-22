@@ -152,6 +152,69 @@
     </div>
   </section>
 
+  <!-- Activity vs churn -->
+  <section class="section fade-up">
+    <div class="section-label">Activity as a churn predictor</div>
+    <div class="content-block">
+      <h2>The more you exchange, the more you stay</h2>
+      <p>Exchange activity is the single strongest predictor of renewal. The relationship is perfectly linear — every step up in activity reduces churn by approximately 10 percentage points.</p>
+    </div>
+    <div class="stat-grid" style="margin-bottom:1.5rem;">
+      <div class="stat-card">
+        <div class="stat-label">Never requested</div>
+        <div class="stat-value" style="color:#a32d2d;">67.0%</div>
+        <div class="stat-sub">5,086 customers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Requested, never completed</div>
+        <div class="stat-value" style="color:#854F0B;">56.1%</div>
+        <div class="stat-sub">14,642 customers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">High activity (10+)</div>
+        <div class="stat-value" style="color:#1a5c1a;">26.5%</div>
+        <div class="stat-sub">10,741 customers</div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Churn rate by activity segment</div>
+      <div class="chart-sub">Never requested → Requested never completed → Low → Medium → High activity</div>
+      <canvas id="activityChurnChart" style="max-height:180px;"></canvas>
+    </div>
+  </section>
+
+  <!-- Continent churn -->
+  <section class="section fade-up">
+    <div class="section-label">Churn by geography</div>
+    <div class="content-block">
+      <h2>Europe and North America churn almost identically</h2>
+      <p>The widely held assumption that American subscribers behave differently from European ones is not supported by the churn data. Both continents churn at ~43% — the difference is negligible. Higher churn in Asia and South America likely reflects lower brand awareness and less mature exchange communities.</p>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Churn rate by continent</div>
+      <div class="chart-sub">Subscribers only · 2019–2021</div>
+      <canvas id="continentChurnChart" style="max-height:180px;"></canvas>
+    </div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Europe vs North America</div>
+        <div class="finding-text">43.8% vs 43.3% — a 0.5 point difference. The assumed cultural gap in subscription behaviour does not translate to a measurable churn difference</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Asia &amp; South America</div>
+        <div class="finding-text">53.2% and 52.4% churn — ~10 points higher than core markets. Smaller communities mean fewer available matches, reducing platform value</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Core markets dominate</div>
+        <div class="finding-text">Europe (46,428) and North America (17,074) represent 89% of all subscribers — churn strategy should focus here first</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Geographic expansion risk</div>
+        <div class="finding-text">Expanding to new continents without sufficient local community density will generate high early churn — critical mass of local listings is needed first</div>
+      </div>
+    </div>
+  </section>
+
   <!-- Recommendations -->
   <section class="section fade-up">
     <div class="section-label">Recommendations</div>
@@ -238,6 +301,54 @@ new Chart(ctx, {
         },
         grid: { color: '#f0ede8' }
       }
+    }
+  }
+});
+
+new Chart(document.getElementById('activityChurnChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Never\nRequested', 'Requested\nNever Completed', 'Low\nActivity', 'Medium\nActivity', 'High\nActivity'],
+    datasets: [{
+      data: [67.0, 56.1, 47.3, 36.5, 26.5],
+      backgroundColor: ['#f09595','#fac775','#fac775','#9FE1CB','#9FE1CB'],
+      borderColor:     ['#E24B4A','#BA7517','#BA7517','#1D9E75','#1D9E75'],
+      borderWidth: 1, borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#1a1916', titleFont: { family: "'DM Mono',monospace", size: 11 }, bodyFont: { family: "'DM Mono',monospace", size: 11 }, callbacks: { label: ctx => ` Churn rate: ${ctx.parsed.y.toFixed(1)}%` } }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono',monospace", size: 10 }, color: '#9c9a94' }, grid: { display: false } },
+      y: { min: 0, max: 80, ticks: { font: { family: "'DM Mono',monospace", size: 11 }, color: '#9c9a94', callback: v => v + '%' }, grid: { color: '#f0ede8' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('continentChurnChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Asia', 'South\nAmerica', 'Oceania', 'Europe', 'North\nAmerica', 'Africa'],
+    datasets: [{
+      data: [53.2, 52.4, 50.1, 43.8, 43.3, 42.6],
+      backgroundColor: ['#fac775','#fac775','#fac775','#9FE1CB','#9FE1CB','#9FE1CB'],
+      borderColor:     ['#BA7517','#BA7517','#BA7517','#1D9E75','#1D9E75','#1D9E75'],
+      borderWidth: 1, borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#1a1916', titleFont: { family: "'DM Mono',monospace", size: 11 }, bodyFont: { family: "'DM Mono',monospace", size: 11 }, callbacks: { label: ctx => ` Churn rate: ${ctx.parsed.y.toFixed(1)}%` } }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono',monospace", size: 10 }, color: '#9c9a94' }, grid: { display: false } },
+      y: { min: 0, max: 65, ticks: { font: { family: "'DM Mono',monospace", size: 11 }, color: '#9c9a94', callback: v => v + '%' }, grid: { color: '#f0ede8' } }
     }
   }
 });
