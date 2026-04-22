@@ -193,6 +193,65 @@
     </div>
   </section>
 
+  <!-- Multi-home section -->
+  <section class="section fade-up">
+    <div class="section-label">Home listings &amp; engagement</div>
+
+    <div class="content-block">
+      <h2>Multi-home users are platform anchors</h2>
+      <p>Users who list more than one home are significantly more active on both sides of the platform — they travel more as guests and host more in return. The symmetry between guest and host activity is remarkable: 3+ home users average 7.7 completed exchanges as guests and 7.7 as hosts.</p>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:1.5rem;">
+      <div class="stat-card">
+        <div class="stat-label">1 home churn rate</div>
+        <div class="stat-value" style="color:#a32d2d;">44.6%</div>
+        <div class="stat-sub">53,213 subscribers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">2 homes churn rate</div>
+        <div class="stat-value" style="color:#854F0B;">40.8%</div>
+        <div class="stat-sub">12,062 subscribers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">3+ homes churn rate</div>
+        <div class="stat-value" style="color:#1a5c1a;">38.6%</div>
+        <div class="stat-sub">2,891 subscribers</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Average completed exchanges by homes listed</div>
+      <div class="chart-sub">Guest activity vs host activity — subscribers only</div>
+      <canvas id="homesChart" style="max-height:200px;"></canvas>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Average nights by homes listed</div>
+      <div class="chart-sub">Guest nights vs host nights — subscribers only</div>
+      <canvas id="nightsHomesChart" style="max-height:200px;"></canvas>
+    </div>
+
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Perfect symmetry</div>
+        <div class="finding-text">3+ home users average 7.7 exchanges as guest and 7.7 as host — they give exactly as much as they take, the ideal platform participant</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">2.4x more active</div>
+        <div class="finding-text">3+ home subscribers complete 7.7 exchanges vs 3.2 for single-home users — nearly 2.5x more active on both sides of the platform</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Strong conversion signal</div>
+        <div class="finding-text">60% of 3+ home hosts are paying subscribers vs only 14.5% of single-home hosts — listing multiple homes is the strongest subscription conversion predictor</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Trigger: second home listing</div>
+        <div class="finding-text">Users who add a second property should be priority targets for subscription conversion — they are 3x more likely to already be subscribers than single-home hosts</div>
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <footer>
@@ -272,6 +331,94 @@ new Chart(document.getElementById('neverChart').getContext('2d'), {
         ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94', callback: v => v + '%' },
         grid: { color: '#f0ede8' }
       }
+    }
+  }
+});
+
+new Chart(document.getElementById('homesChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['1 home', '2 homes', '3+ homes'],
+    datasets: [
+      {
+        label: 'Avg exchanges as guest',
+        data: [3.2, 5.0, 7.7],
+        backgroundColor: '#B5D4F4',
+        borderColor: '#185FA5',
+        borderWidth: 1,
+        borderRadius: 4
+      },
+      {
+        label: 'Avg exchanges as host',
+        data: [2.8, 4.9, 7.7],
+        backgroundColor: '#9FE1CB',
+        borderColor: '#1D9E75',
+        borderWidth: 1,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { font: { family: "'DM Mono', monospace", size: 11 }, padding: 16, boxWidth: 24 }
+      },
+      tooltip: {
+        backgroundColor: '#1a1916',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont:  { family: "'DM Mono', monospace", size: 11 },
+        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} exchanges` }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { display: false } },
+      y: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { color: '#f0ede8' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('nightsHomesChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['1 home', '2 homes', '3+ homes'],
+    datasets: [
+      {
+        label: 'Avg nights as guest',
+        data: [20.1, 29.9, 44.6],
+        backgroundColor: '#B5D4F4',
+        borderColor: '#185FA5',
+        borderWidth: 1,
+        borderRadius: 4
+      },
+      {
+        label: 'Avg nights as host',
+        data: [18.2, 28.9, 43.5],
+        backgroundColor: '#9FE1CB',
+        borderColor: '#1D9E75',
+        borderWidth: 1,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { font: { family: "'DM Mono', monospace", size: 11 }, padding: 16, boxWidth: 24 }
+      },
+      tooltip: {
+        backgroundColor: '#1a1916',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont:  { family: "'DM Mono', monospace", size: 11 },
+        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} nights` }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { display: false } },
+      y: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { color: '#f0ede8' } }
     }
   }
 });
