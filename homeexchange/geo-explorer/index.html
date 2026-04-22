@@ -1,1 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geographic Exchange Explorer — HomeExchange</title>
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <style>
+    .explorer-wrap { background: #fff; border: 0.5px solid #e8e6e0; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; }
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
+    .control-label { font-family: 'DM Mono', monospace; font-size: 11px; color: #9c9a94; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+    select { font-family: 'DM Mono', monospace; font-size: 12px; padding: 6px 10px; border: 0.5px solid #c8c5bc; border-radius: 4px; background: #fff; color: #1a1916; cursor: pointer; min-width: 200px; }
+    .toggle-wrap { display: flex; gap: 1px; border: 0.5px solid #c8c5bc; border-radius: 4px; overflow: hidden; }
+    .toggle-btn { font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 14px; background: #fff; color: #5c5a54; border: none; cursor: pointer; transition: all 0.15s; }
+    .toggle-btn.active { background: #1a1916; color: #fff; }
+    .map-container { width: 100%; height: 280px; position: relative; margin-bottom: 1rem; }
+    .map-container svg { width: 100%; height: 100%; }
+    .country-path { fill: #f0ede8; stroke: #fff; stroke-width: 0.5px; transition: fill 0.3s; cursor: pointer; }
+    .country-path.selected { fill: #1a1916; }
+    .country-path.highlighted { fill: #378ADD; }
+    .country-path.light { fill: #B5D4F4; }
+    .country-path.medium { fill: #378ADD; }
+    .country-path.dark { fill: #185FA5; }
+    .map-tooltip { position: absolute; background: #1a1916; color: #fff; font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 10px; border-radius: 4px; pointer-events: none; display: none; white-space: nowrap; z-index: 10; }
+    .chart-wrap { margin-top: 1rem; }
+    .chart-title { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .chart-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: #9c9a94; margin-bottom: 1rem; }
+    .summary-stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; border: 0.5px solid #e8e6e0; border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem; }
+    .sum-stat { background: #fafaf8; padding: 0.8rem 1rem; }
+    .sum-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #9c9a94; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .sum-val { font-size: 18px; font-weight: 500; letter-spacing: -0.02em; }
+    .sum-sub { font-size: 11px; color: #5c5a54; font-weight: 300; }
+  </style>
+</head>
+<body>
 
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo mono">tamás imre</a>
+    <ul class="nav-links">
+      <li><a href="/#projects">projects</a></li>
+      <li><a href="/homeexchange/">homeexchange</a></li>
+      <li><a href="mailto:imre.tamas@gmail.com">contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container" style="padding-top:2rem; padding-bottom:4rem;">
+
+  <a href="/homeexchange/" class="back-link">← back to homeexchange</a>
+
+  <section class="project-hero fade-up">
+    <p class="project-hero-meta">HomeExchange · Geographic Analysis · 2019–2022</p>
+    <h1><strong>Geographic</strong><br>exchange explorer</h1>
+    <p class="project-hero-desc">
+      Select any country to explore where its members travel — or who visits it.
+      France dominates as both origin and destination, reflecting the platform's French roots.
+      Completed exchanges only.
+    </p>
+    <div class="tag-row">
+      <span class="tag">SQL</span>
+      <span class="tag">BigQuery</span>
+      <span class="tag">D3.js</span>
+      <span class="tag">Geographic Analysis</span>
+    </div>
+  </section>
+
+  <!-- Explorer -->
+  <section class="section fade-up">
+    <div class="section-label">Interactive explorer</div>
+
+    <div class="explorer-wrap">
+      <div class="controls">
+        <div>
+          <div class="control-label">Select country</div>
+          <select id="countrySelect"></select>
+        </div>
+        <div>
+          <div class="control-label">View mode</div>
+          <div class="toggle-wrap">
+            <button class="toggle-btn active" id="btnDest" onclick="setMode('destinations')">Where they go ↗</button>
+            <button class="toggle-btn" id="btnOrig" onclick="setMode('origins')">Who visits ↙</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="summary-stats" id="summaryStats">
+        <div class="sum-stat">
+          <div class="sum-label">Total exchanges</div>
+          <div class="sum-val" id="statTotal">—</div>
+          <div class="sum-sub" id="statCountry">select a country</div>
+        </div>
+        <div class="sum-stat">
+          <div class="sum-label">Top destination</div>
+          <div class="sum-val" id="statTop">—</div>
+          <div class="sum-sub" id="statTopN"></div>
+        </div>
+        <div class="sum-stat">
+          <div class="sum-label">Countries reached</div>
+          <div class="sum-val" id="statReach">—</div>
+          <div class="sum-sub">unique destinations</div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div class="map-container">
+        <div class="map-tooltip" id="mapTooltip"></div>
+        <svg id="worldMap"></svg>
+      </div>
+
+      <!-- Bar chart -->
+      <div class="chart-wrap">
+        <div class="chart-title" id="chartTitle">Top destinations</div>
+        <div class="chart-sub" id="chartSub">Select a country above</div>
+        <canvas id="geoChart" style="max-height:200px;"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key findings -->
+  <section class="section fade-up">
+    <div class="section-label">Key findings</div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">France — platform hub</div>
+        <div class="finding-text">117,298 completed exchanges as destination — more than double Spain in second place. Also the #1 origin country with 66,757 domestic exchanges alone</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Spain — Europe's favourite</div>
+        <div class="finding-text">53,421 exchanges as destination. Visited by members from France, Italy, Netherlands, Germany, UK, Canada — the most internationally diverse destination</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Domestic first</div>
+        <div class="finding-text">Every major country's top exchange pair is domestic — France→France, Spain→Spain, USA→USA. Home market trust precedes international expansion</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">French overseas territories</div>
+        <div class="finding-text">Guadeloupe, Martinique, Réunion, French Polynesia all appear as significant exchange destinations — French members treating overseas territories as domestic travel</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="contact-links">
+      <a href="mailto:imre.tamas@gmail.com" class="contact-link"><span class="contact-dot"></span> imre.tamas@gmail.com</a>
+      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank"><span class="contact-dot"></span> LinkedIn</a>
+      <a href="https://github.com/imrepocok" class="contact-link" target="_blank"><span class="contact-dot"></span> GitHub</a>
+    </div>
+    <span class="footer-copy mono">Berlin, Germany</span>
+  </div>
+</footer>
+
+<script>
+const RAW = [{"oc":"FRA","on":"France","dc":"FRA","dn":"France","n":66757},{"oc":"ESP","on":"Spain","dc":"ESP","dn":"Spain","n":24980},{"oc":"USA","on":"United States","dc":"USA","dn":"United States","n":21977},{"oc":"FRA","on":"France","dc":"ESP","dn":"Spain","n":6995},{"oc":"ESP","on":"Spain","dc":"FRA","dn":"France","n":6003},{"oc":"CAN","on":"Canada","dc":"CAN","dn":"Canada","n":5342},{"oc":"ITA","on":"Italy","dc":"ITA","dn":"Italy","n":4889},{"oc":"FRA","on":"France","dc":"ITA","dn":"Italy","n":3067},{"oc":"FRA","on":"France","dc":"USA","dn":"United States","n":2151},{"oc":"NLD","on":"Netherlands","dc":"NLD","dn":"Netherlands","n":2052},{"oc":"AUS","on":"Australia","dc":"AUS","dn":"Australia","n":2048},{"oc":"ITA","on":"Italy","dc":"FRA","dn":"France","n":1874},{"oc":"NLD","on":"Netherlands","dc":"FRA","dn":"France","n":1736},{"oc":"DEU","on":"Germany","dc":"DEU","dn":"Germany","n":1709},{"oc":"FRA","on":"France","dc":"CAN","dn":"Canada","n":1697},{"oc":"USA","on":"United States","dc":"FRA","dn":"France","n":1685},{"oc":"CAN","on":"Canada","dc":"USA","dn":"United States","n":1587},{"oc":"BEL","on":"Belgium","dc":"FRA","dn":"France","n":1559},{"oc":"ESP","on":"Spain","dc":"ITA","dn":"Italy","n":1499},{"oc":"DEU","on":"Germany","dc":"FRA","dn":"France","n":1321},{"oc":"FRA","on":"France","dc":"NLD","dn":"Netherlands","n":1319},{"oc":"GBR","on":"United Kingdom","dc":"GBR","dn":"United Kingdom","n":1295},{"oc":"FRA","on":"France","dc":"BEL","dn":"Belgium","n":1218},{"oc":"CAN","on":"Canada","dc":"FRA","dn":"France","n":1189},{"oc":"ITA","on":"Italy","dc":"ESP","dn":"Spain","n":1188},{"oc":"ESP","on":"Spain","dc":"USA","dn":"United States","n":1104},{"oc":"FRA","on":"France","dc":"DEU","dn":"Germany","n":1096},{"oc":"USA","on":"United States","dc":"ESP","dn":"Spain","n":1032},{"oc":"BEL","on":"Belgium","dc":"BEL","dn":"Belgium","n":991},{"oc":"USA","on":"United States","dc":"CAN","dn":"Canada","n":979},{"oc":"USA","on":"United States","dc":"MEX","dn":"Mexico","n":951},{"oc":"ESP","on":"Spain","dc":"DEU","dn":"Germany","n":915},{"oc":"FRA","on":"France","dc":"CHE","dn":"Switzerland","n":865},{"oc":"NLD","on":"Netherlands","dc":"ESP","dn":"Spain","n":865},{"oc":"CHE","on":"Switzerland","dc":"FRA","dn":"France","n":808},{"oc":"ESP","on":"Spain","dc":"PRT","dn":"Portugal","n":789},{"oc":"FRA","on":"France","dc":"GBR","dn":"United Kingdom","n":782},{"oc":"GBR","on":"United Kingdom","dc":"FRA","dn":"France","n":754},{"oc":"DEU","on":"Germany","dc":"ESP","dn":"Spain","n":730},{"oc":"IRL","on":"Ireland","dc":"IRL","dn":"Ireland","n":711},{"oc":"ESP","on":"Spain","dc":"NLD","dn":"Netherlands","n":698},{"oc":"MEX","on":"Mexico","dc":"USA","dn":"United States","n":685},{"oc":"FRA","on":"France","dc":"GLP","dn":"Guadeloupe","n":667},{"oc":"ESP","on":"Spain","dc":"GBR","dn":"United Kingdom","n":661},{"oc":"GLP","on":"Guadeloupe","dc":"FRA","dn":"France","n":630},{"oc":"USA","on":"United States","dc":"ITA","dn":"Italy","n":599},{"oc":"FRA","on":"France","dc":"REU","dn":"Reunion","n":593},{"oc":"NLD","on":"Netherlands","dc":"DEU","dn":"Germany","n":575},{"oc":"FRA","on":"France","dc":"PRT","dn":"Portugal","n":572},{"oc":"GBR","on":"United Kingdom","dc":"ESP","dn":"Spain","n":554},{"oc":"MEX","on":"Mexico","dc":"MEX","dn":"Mexico","n":542},{"oc":"REU","on":"Reunion","dc":"FRA","dn":"France","n":537},{"oc":"NLD","on":"Netherlands","dc":"BEL","dn":"Belgium","n":526},{"oc":"CHE","on":"Switzerland","dc":"CHE","dn":"Switzerland","n":523},{"oc":"DEU","on":"Germany","dc":"ITA","dn":"Italy","n":523},{"oc":"NZL","on":"New Zealand","dc":"NZL","dn":"New Zealand","n":506},{"oc":"PRT","on":"Portugal","dc":"ESP","dn":"Spain","n":501},{"oc":"ITA","on":"Italy","dc":"USA","dn":"United States","n":493},{"oc":"DNK","on":"Denmark","dc":"DNK","dn":"Denmark","n":491},{"oc":"DNK","on":"Denmark","dc":"FRA","dn":"France","n":460},{"oc":"ARG","on":"Argentina","dc":"ARG","dn":"Argentina","n":442},{"oc":"DEU","on":"Germany","dc":"NLD","dn":"Netherlands","n":422},{"oc":"GBR","on":"United Kingdom","dc":"USA","dn":"United States","n":414},{"oc":"CAN","on":"Canada","dc":"ESP","dn":"Spain","n":413},{"oc":"ESP","on":"Spain","dc":"BEL","dn":"Belgium","n":403},{"oc":"USA","on":"United States","dc":"GBR","dn":"United Kingdom","n":399},{"oc":"BRA","on":"Brazil","dc":"BRA","dn":"Brazil","n":397},{"oc":"FRA","on":"France","dc":"DNK","dn":"Denmark","n":396},{"oc":"PRT","on":"Portugal","dc":"FRA","dn":"France","n":381},{"oc":"BEL","on":"Belgium","dc":"NLD","dn":"Netherlands","n":380},{"oc":"NLD","on":"Netherlands","dc":"ITA","dn":"Italy","n":377},{"oc":"ITA","on":"Italy","dc":"DEU","dn":"Germany","n":373},{"oc":"FRA","on":"France","dc":"IRL","dn":"Ireland","n":368},{"oc":"BEL","on":"Belgium","dc":"ESP","dn":"Spain","n":366},{"oc":"CRI","on":"Costa Rica","dc":"USA","dn":"United States","n":364},{"oc":"IRL","on":"Ireland","dc":"FRA","dn":"France","n":344},{"oc":"IRL","on":"Ireland","dc":"ESP","dn":"Spain","n":337},{"oc":"ESP","on":"Spain","dc":"IRL","dn":"Ireland","n":333},{"oc":"MAR","on":"Morocco","dc":"FRA","dn":"France","n":328},{"oc":"MTQ","on":"Martinique","dc":"FRA","dn":"France","n":324},{"oc":"ITA","on":"Italy","dc":"NLD","dn":"Netherlands","n":319},{"oc":"DNK","on":"Denmark","dc":"DEU","dn":"Germany","n":315},{"oc":"PRT","on":"Portugal","dc":"PRT","dn":"Portugal","n":309},{"oc":"FRA","on":"France","dc":"MAR","dn":"Morocco","n":306},{"oc":"NLD","on":"Netherlands","dc":"USA","dn":"United States","n":302},{"oc":"DEU","on":"Germany","dc":"USA","dn":"United States","n":294},{"oc":"ESP","on":"Spain","dc":"CAN","dn":"Canada","n":294},{"oc":"FRA","on":"France","dc":"MEX","dn":"Mexico","n":285},{"oc":"USA","on":"United States","dc":"NLD","dn":"Netherlands","n":285},{"oc":"FRA","on":"France","dc":"MTQ","dn":"Martinique","n":277},{"oc":"FRA","on":"France","dc":"SWE","dn":"Sweden","n":276},{"oc":"DEU","on":"Germany","dc":"DNK","dn":"Denmark","n":276},{"oc":"FRA","on":"France","dc":"GRC","dn":"Greece","n":266},{"oc":"CAN","on":"Canada","dc":"MEX","dn":"Mexico","n":263},{"oc":"ESP","on":"Spain","dc":"CHE","dn":"Switzerland","n":263},{"oc":"FRA","on":"France","dc":"ISL","dn":"Iceland","n":262},{"oc":"ESP","on":"Spain","dc":"MEX","dn":"Mexico","n":259},{"oc":"ESP","on":"Spain","dc":"DNK","dn":"Denmark","n":256},{"oc":"USA","on":"United States","dc":"CRI","dn":"Costa Rica","n":255},{"oc":"AUS","on":"Australia","dc":"GBR","dn":"United Kingdom","n":250},{"oc":"FRA","on":"France","dc":"AUS","dn":"Australia","n":244},{"oc":"FRA","on":"France","dc":"NOR","dn":"Norway","n":241},{"oc":"DNK","on":"Denmark","dc":"ESP","dn":"Spain","n":240},{"oc":"USA","on":"United States","dc":"DEU","dn":"Germany","n":231},{"oc":"AUS","on":"Australia","dc":"FRA","dn":"France","n":222},{"oc":"ESP","on":"Spain","dc":"AUT","dn":"Austria","n":220},{"oc":"ITA","on":"Italy","dc":"GBR","dn":"United Kingdom","n":219},{"oc":"FRA","on":"France","dc":"AUT","dn":"Austria","n":217},{"oc":"ZAF","on":"South Africa","dc":"ZAF","dn":"South Africa","n":211},{"oc":"ESP","on":"Spain","dc":"HUN","dn":"Hungary","n":209},{"oc":"CAN","on":"Canada","dc":"ITA","dn":"Italy","n":207},{"oc":"GBR","on":"United Kingdom","dc":"ITA","dn":"Italy","n":205},{"oc":"GRC","on":"Greece","dc":"FRA","dn":"France","n":200},{"oc":"SWE","on":"Sweden","dc":"FRA","dn":"France","n":197},{"oc":"AUS","on":"Australia","dc":"USA","dn":"United States","n":197},{"oc":"SWE","on":"Sweden","dc":"SWE","dn":"Sweden","n":192},{"oc":"IRL","on":"Ireland","dc":"USA","dn":"United States","n":191},{"oc":"USA","on":"United States","dc":"PRT","dn":"Portugal","n":189},{"oc":"MEX","on":"Mexico","dc":"ESP","dn":"Spain","n":189},{"oc":"ITA","on":"Italy","dc":"CHE","dn":"Switzerland","n":189},{"oc":"HUN","on":"Hungary","dc":"HUN","dn":"Hungary","n":187},{"oc":"CHE","on":"Switzerland","dc":"ITA","dn":"Italy","n":184},{"oc":"ESP","on":"Spain","dc":"ISL","dn":"Iceland","n":183},{"oc":"USA","on":"United States","dc":"IRL","dn":"Ireland","n":183},{"oc":"ARG","on":"Argentina","dc":"ESP","dn":"Spain","n":182},{"oc":"SWE","on":"Sweden","dc":"ESP","dn":"Spain","n":180},{"oc":"BEL","on":"Belgium","dc":"ITA","dn":"Italy","n":178},{"oc":"DNK","on":"Denmark","dc":"USA","dn":"United States","n":177},{"oc":"NZL","on":"New Zealand","dc":"AUS","dn":"Australia","n":175},{"oc":"FRA","on":"France","dc":"HUN","dn":"Hungary","n":174},{"oc":"DEU","on":"Germany","dc":"CHE","dn":"Switzerland","n":173},{"oc":"MEX","on":"Mexico","dc":"FRA","dn":"France","n":172},{"oc":"CHE","on":"Switzerland","dc":"ESP","dn":"Spain","n":171},{"oc":"FRA","on":"France","dc":"PYF","dn":"French Polynesia","n":171},{"oc":"GBR","on":"United Kingdom","dc":"AUS","dn":"Australia","n":170},{"oc":"FRA","on":"France","dc":"HRV","dn":"Croatia","n":169},{"oc":"BEL","on":"Belgium","dc":"DEU","dn":"Germany","n":167},{"oc":"NOR","on":"Norway","dc":"FRA","dn":"France","n":166},{"oc":"ESP","on":"Spain","dc":"ARG","dn":"Argentina","n":164},{"oc":"USA","on":"United States","dc":"AUS","dn":"Australia","n":163},{"oc":"GLP","on":"Guadeloupe","dc":"GLP","dn":"Guadeloupe","n":162},{"oc":"AUT","on":"Austria","dc":"FRA","dn":"France","n":162},{"oc":"CRI","on":"Costa Rica","dc":"CRI","dn":"Costa Rica","n":161},{"oc":"ESP","on":"Spain","dc":"CZE","dn":"Czechia","n":160},{"oc":"ISL","on":"Iceland","dc":"ESP","dn":"Spain","n":160},{"oc":"DEU","on":"Germany","dc":"AUT","dn":"Austria","n":157},{"oc":"AUS","on":"Australia","dc":"NZL","dn":"New Zealand","n":155},{"oc":"BRA","on":"Brazil","dc":"FRA","dn":"France","n":152},{"oc":"ESP","on":"Spain","dc":"AND","dn":"Andorra","n":152},{"oc":"MEX","on":"Mexico","dc":"CAN","dn":"Canada","n":151},{"oc":"HUN","on":"Hungary","dc":"ESP","dn":"Spain","n":151},{"oc":"BRA","on":"Brazil","dc":"USA","dn":"United States","n":150},{"oc":"NLD","on":"Netherlands","dc":"CHE","dn":"Switzerland","n":148},{"oc":"FRA","on":"France","dc":"CRI","dn":"Costa Rica","n":148},{"oc":"FRA","on":"France","dc":"CZE","dn":"Czechia","n":145},{"oc":"CAN","on":"Canada","dc":"GBR","dn":"United Kingdom","n":144},{"oc":"ESP","on":"Spain","dc":"NOR","dn":"Norway","n":144},{"oc":"CAN","on":"Canada","dc":"CRI","dn":"Costa Rica","n":142},{"oc":"CAN","on":"Canada","dc":"AUS","dn":"Australia","n":141},{"oc":"USA","on":"United States","dc":"NZL","dn":"New Zealand","n":140},{"oc":"BRA","on":"Brazil","dc":"ESP","dn":"Spain","n":139},{"oc":"ESP","on":"Spain","dc":"SWE","dn":"Sweden","n":138},{"oc":"CHE","on":"Switzerland","dc":"DEU","dn":"Germany","n":138},{"oc":"AUS","on":"Australia","dc":"CAN","dn":"Canada","n":138},{"oc":"ISL","on":"Iceland","dc":"FRA","dn":"France","n":137},{"oc":"AUT","on":"Austria","dc":"ITA","dn":"Italy","n":134},{"oc":"FRA","on":"France","dc":"NZL","dn":"New Zealand","n":132},{"oc":"CZE","on":"Czechia","dc":"FRA","dn":"France","n":130},{"oc":"USA","on":"United States","dc":"CHE","dn":"Switzerland","n":130},{"oc":"CAN","on":"Canada","dc":"PRT","dn":"Portugal","n":126},{"oc":"ITA","on":"Italy","dc":"PRT","dn":"Portugal","n":122},{"oc":"IDN","on":"Indonesia","dc":"FRA","dn":"France","n":122},{"oc":"NLD","on":"Netherlands","dc":"DNK","dn":"Denmark","n":122},{"oc":"PRT","on":"Portugal","dc":"ITA","dn":"Italy","n":120},{"oc":"PYF","on":"French Polynesia","dc":"FRA","dn":"France","n":119},{"oc":"AUT","on":"Austria","dc":"AUT","dn":"Austria","n":119},{"oc":"AUT","on":"Austria","dc":"ESP","dn":"Spain","n":118},{"oc":"ITA","on":"Italy","dc":"AUT","dn":"Austria","n":118},{"oc":"NLD","on":"Netherlands","dc":"GBR","dn":"United Kingdom","n":117},{"oc":"FRA","on":"France","dc":"BRA","dn":"Brazil","n":117},{"oc":"FRA","on":"France","dc":"ARG","dn":"Argentina","n":117},{"oc":"ESP","on":"Spain","dc":"MAR","dn":"Morocco","n":117},{"oc":"HRV","on":"Croatia","dc":"HRV","dn":"Croatia","n":116},{"oc":"ITA","on":"Italy","dc":"BEL","dn":"Belgium","n":114},{"oc":"GBR","on":"United Kingdom","dc":"NLD","dn":"Netherlands","n":114},{"oc":"REU","on":"Reunion","dc":"REU","dn":"Reunion","n":113},{"oc":"MAR","on":"Morocco","dc":"ESP","dn":"Spain","n":112},{"oc":"DNK","on":"Denmark","dc":"ITA","dn":"Italy","n":111},{"oc":"PRT","on":"Portugal","dc":"USA","dn":"United States","n":111},{"oc":"ARG","on":"Argentina","dc":"FRA","dn":"France","n":110},{"oc":"DEU","on":"Germany","dc":"BEL","dn":"Belgium","n":109},{"oc":"GBR","on":"United Kingdom","dc":"DEU","dn":"Germany","n":108},{"oc":"NOR","on":"Norway","dc":"ESP","dn":"Spain","n":106},{"oc":"USA","on":"United States","dc":"PRI","dn":"Puerto Rico","n":106},{"oc":"FRA","on":"France","dc":"THA","dn":"Thailand","n":106},{"oc":"ESP","on":"Spain","dc":"BRA","dn":"Brazil","n":106},{"oc":"CZE","on":"Czechia","dc":"ESP","dn":"Spain","n":102},{"oc":"ESP","on":"Spain","dc":"AUS","dn":"Australia","n":102},{"oc":"CZE","on":"Czechia","dc":"ITA","dn":"Italy","n":102},{"oc":"ARG","on":"Argentina","dc":"USA","dn":"United States","n":100},{"oc":"AUT","on":"Austria","dc":"DEU","dn":"Germany","n":100},{"oc":"FRA","on":"France","dc":"MUS","dn":"Mauritius","n":99},{"oc":"DEU","on":"Germany","dc":"PRT","dn":"Portugal","n":99},{"oc":"ESP","on":"Spain","dc":"GRC","dn":"Greece","n":99},{"oc":"NOR","on":"Norway","dc":"NOR","dn":"Norway","n":98},{"oc":"IRL","on":"Ireland","dc":"GBR","dn":"United Kingdom","n":98},{"oc":"USA","on":"United States","dc":"ISL","dn":"Iceland","n":98},{"oc":"FRA","on":"France","dc":"IDN","dn":"Indonesia","n":98},{"oc":"DNK","on":"Denmark","dc":"NOR","dn":"Norway","n":97},{"oc":"IDN","on":"Indonesia","dc":"IDN","dn":"Indonesia","n":95},{"oc":"USA","on":"United States","dc":"DNK","dn":"Denmark","n":95},{"oc":"GBR","on":"United Kingdom","dc":"NZL","dn":"New Zealand","n":95},{"oc":"HUN","on":"Hungary","dc":"FRA","dn":"France","n":94},{"oc":"BRA","on":"Brazil","dc":"ITA","dn":"Italy","n":94},{"oc":"ESP","on":"Spain","dc":"CRI","dn":"Costa Rica","n":93},{"oc":"DEU","on":"Germany","dc":"GBR","dn":"United Kingdom","n":93},{"oc":"GLP","on":"Guadeloupe","dc":"CAN","dn":"Canada","n":92},{"oc":"HRV","on":"Croatia","dc":"FRA","dn":"France","n":90},{"oc":"PYF","on":"French Polynesia","dc":"PYF","dn":"French Polynesia","n":89},{"oc":"CHE","on":"Switzerland","dc":"USA","dn":"United States","n":89},{"oc":"ESP","on":"Spain","dc":"POL","dn":"Poland","n":88},{"oc":"NZL","on":"New Zealand","dc":"USA","dn":"United States","n":88},{"oc":"USA","on":"United States","dc":"AUT","dn":"Austria","n":88},{"oc":"GBR","on":"United Kingdom","dc":"IRL","dn":"Ireland","n":85},{"oc":"NZL","on":"New Zealand","dc":"FRA","dn":"France","n":85},{"oc":"NLD","on":"Netherlands","dc":"AUT","dn":"Austria","n":85},{"oc":"BEL","on":"Belgium","dc":"USA","dn":"United States","n":84},{"oc":"DEU","on":"Germany","dc":"SWE","dn":"Sweden","n":84},{"oc":"DEU","on":"Germany","dc":"CAN","dn":"Canada","n":83},{"oc":"POL","on":"Poland","dc":"ESP","dn":"Spain","n":83},{"oc":"ESP","on":"Spain","dc":"HRV","dn":"Croatia","n":82},{"oc":"AUS","on":"Australia","dc":"ESP","dn":"Spain","n":82},{"oc":"ITA","on":"Italy","dc":"HRV","dn":"Croatia","n":82},{"oc":"CAN","on":"Canada","dc":"NLD","dn":"Netherlands","n":81},{"oc":"NLD","on":"Netherlands","dc":"PRT","dn":"Portugal","n":81},{"oc":"IRL","on":"Ireland","dc":"ITA","dn":"Italy","n":80},{"oc":"ITA","on":"Italy","dc":"IRL","dn":"Ireland","n":80},{"oc":"AUS","on":"Australia","dc":"ITA","dn":"Italy","n":80},{"oc":"GBR","on":"United Kingdom","dc":"CAN","dn":"Canada","n":80},{"oc":"FRA","on":"France","dc":"ZAF","dn":"South Africa","n":79},{"oc":"ITA","on":"Italy","dc":"DNK","dn":"Denmark","n":78},{"oc":"ITA","on":"Italy","dc":"CAN","dn":"Canada","n":78},{"oc":"HUN","on":"Hungary","dc":"USA","dn":"United States","n":77},{"oc":"ZAF","on":"South Africa","dc":"FRA","dn":"France","n":76},{"oc":"USA","on":"United States","dc":"BEL","dn":"Belgium","n":75},{"oc":"IDN","on":"Indonesia","dc":"AUS","dn":"Australia","n":75},{"oc":"DNK","on":"Denmark","dc":"SWE","dn":"Sweden","n":74},{"oc":"HRV","on":"Croatia","dc":"ESP","dn":"Spain","n":74},{"oc":"HRV","on":"Croatia","dc":"ITA","dn":"Italy","n":74},{"oc":"PRI","on":"Puerto Rico","dc":"USA","dn":"United States","n":74},{"oc":"THA","on":"Thailand","dc":"THA","dn":"Thailand","n":74},{"oc":"CHE","on":"Switzerland","dc":"NLD","dn":"Netherlands","n":73},{"oc":"SWE","on":"Sweden","dc":"USA","dn":"United States","n":72},{"oc":"ISL","on":"Iceland","dc":"USA","dn":"United States","n":71},{"oc":"ITA","on":"Italy","dc":"HUN","dn":"Hungary","n":70},{"oc":"ESP","on":"Spain","dc":"IDN","dn":"Indonesia","n":70},{"oc":"USA","on":"United States","dc":"HRV","dn":"Croatia","n":70},{"oc":"NOR","on":"Norway","dc":"DNK","dn":"Denmark","n":69},{"oc":"MUS","on":"Mauritius","dc":"FRA","dn":"France","n":68},{"oc":"HUN","on":"Hungary","dc":"ITA","dn":"Italy","n":68},{"oc":"COL","on":"Colombia","dc":"USA","dn":"United States","n":67},{"oc":"ISR","on":"Israel","dc":"FRA","dn":"France","n":67},{"oc":"CAN","on":"Canada","dc":"GLP","dn":"Guadeloupe","n":67},{"oc":"DNK","on":"Denmark","dc":"NLD","dn":"Netherlands","n":66},{"oc":"IDN","on":"Indonesia","dc":"USA","dn":"United States","n":66},{"oc":"BEL","on":"Belgium","dc":"CHE","dn":"Switzerland","n":64},{"oc":"FRA","on":"France","dc":"COL","dn":"Colombia","n":64},{"oc":"AUT","on":"Austria","dc":"USA","dn":"United States","n":64},{"oc":"FRA","on":"France","dc":"ISR","dn":"Israel","n":64},{"oc":"USA","on":"United States","dc":"ARG","dn":"Argentina","n":64},{"oc":"FRA","on":"France","dc":"MLT","dn":"Malta","n":63},{"oc":"ITA","on":"Italy","dc":"GRC","dn":"Greece","n":63},{"oc":"AND","on":"Andorra","dc":"ESP","dn":"Spain","n":62},{"oc":"PRT","on":"Portugal","dc":"NLD","dn":"Netherlands","n":62},{"oc":"NLD","on":"Netherlands","dc":"CAN","dn":"Canada","n":62},{"oc":"ARG","on":"Argentina","dc":"ITA","dn":"Italy","n":62},{"oc":"CZE","on":"Czechia","dc":"CZE","dn":"Czechia","n":61},{"oc":"ZAF","on":"South Africa","dc":"USA","dn":"United States","n":61},{"oc":"SWE","on":"Sweden","dc":"DNK","dn":"Denmark","n":61},{"oc":"ISR","on":"Israel","dc":"USA","dn":"United States","n":60},{"oc":"ARG","on":"Argentina","dc":"BRA","dn":"Brazil","n":60},{"oc":"NZL","on":"New Zealand","dc":"GBR","dn":"United Kingdom","n":60},{"oc":"DNK","on":"Denmark","dc":"CHE","dn":"Switzerland","n":60},{"oc":"ITA","on":"Italy","dc":"ISL","dn":"Iceland","n":59},{"oc":"FRA","on":"France","dc":"FIN","dn":"Finland","n":59},{"oc":"USA","on":"United States","dc":"CZE","dn":"Czechia","n":59},{"oc":"GBR","on":"United Kingdom","dc":"PRT","dn":"Portugal","n":58},{"oc":"SWE","on":"Sweden","dc":"DEU","dn":"Germany","n":58},{"oc":"NLD","on":"Netherlands","dc":"SWE","dn":"Sweden","n":58},{"oc":"ITA","on":"Italy","dc":"MEX","dn":"Mexico","n":58},{"oc":"PYF","on":"French Polynesia","dc":"USA","dn":"United States","n":57},{"oc":"GRC","on":"Greece","dc":"ESP","dn":"Spain","n":57},{"oc":"USA","on":"United States","dc":"IDN","dn":"Indonesia","n":56},{"oc":"FRA","on":"France","dc":"SVN","dn":"Slovenia","n":56},{"oc":"NLD","on":"Netherlands","dc":"ZAF","dn":"South Africa","n":56},{"oc":"DEU","on":"Germany","dc":"HRV","dn":"Croatia","n":55},{"oc":"USA","on":"United States","dc":"BRA","dn":"Brazil","n":55},{"oc":"CAN","on":"Canada","dc":"IRL","dn":"Ireland","n":55},{"oc":"PRT","on":"Portugal","dc":"GBR","dn":"United Kingdom","n":55},{"oc":"GRC","on":"Greece","dc":"ITA","dn":"Italy","n":54},{"oc":"GLP","on":"Guadeloupe","dc":"USA","dn":"United States","n":54},{"oc":"USA","on":"United States","dc":"HUN","dn":"Hungary","n":54},{"oc":"DEU","on":"Germany","dc":"AUS","dn":"Australia","n":54},{"oc":"POL","on":"Poland","dc":"ITA","dn":"Italy","n":54},{"oc":"MAR","on":"Morocco","dc":"MAR","dn":"Morocco","n":54},{"oc":"COL","on":"Colombia","dc":"ESP","dn":"Spain","n":54},{"oc":"BEL","on":"Belgium","dc":"DNK","dn":"Denmark","n":53},{"oc":"NOR","on":"Norway","dc":"ITA","dn":"Italy","n":53},{"oc":"ESP","on":"Spain","dc":"ZAF","dn":"South Africa","n":53},{"oc":"MAR","on":"Morocco","dc":"USA","dn":"United States","n":53},{"oc":"ESP","on":"Spain","dc":"COL","dn":"Colombia","n":52},{"oc":"COL","on":"Colombia","dc":"COL","dn":"Colombia","n":52},{"oc":"GBR","on":"United Kingdom","dc":"MEX","dn":"Mexico","n":52},{"oc":"CAN","on":"Canada","dc":"BEL","dn":"Belgium","n":52},{"oc":"IRL","on":"Ireland","dc":"NLD","dn":"Netherlands","n":52},{"oc":"GRC","on":"Greece","dc":"GRC","dn":"Greece","n":52},{"oc":"ESP","on":"Spain","dc":"TUR","dn":"Turkey","n":52},{"oc":"AND","on":"Andorra","dc":"FRA","dn":"France","n":52},{"oc":"AUT","on":"Austria","dc":"NLD","dn":"Netherlands","n":51},{"oc":"MTQ","on":"Martinique","dc":"CAN","dn":"Canada","n":51},{"oc":"USA","on":"United States","dc":"COL","dn":"Colombia","n":51},{"oc":"SWE","on":"Sweden","dc":"ITA","dn":"Italy","n":50},{"oc":"PRT","on":"Portugal","dc":"DEU","dn":"Germany","n":50},{"oc":"HRV","on":"Croatia","dc":"USA","dn":"United States","n":50},{"oc":"FRA","on":"France","dc":"AND","dn":"Andorra","n":50},{"oc":"FRA","on":"France","dc":"POL","dn":"Poland","n":50},{"oc":"IRL","on":"Ireland","dc":"DEU","dn":"Germany","n":50},{"oc":"CAN","on":"Canada","dc":"MTQ","dn":"Martinique","n":50}];
+
+const COUNTRIES = [["FRA","France"],["ESP","Spain"],["USA","United States"],["ITA","Italy"],["CAN","Canada"],["NLD","Netherlands"],["DEU","Germany"],["GBR","United Kingdom"],["BEL","Belgium"],["AUS","Australia"],["DNK","Denmark"],["CHE","Switzerland"],["IRL","Ireland"],["MEX","Mexico"],["PRT","Portugal"],["BRA","Brazil"],["NZL","New Zealand"],["ARG","Argentina"],["GLP","Guadeloupe"],["AUT","Austria"],["SWE","Sweden"],["HUN","Hungary"],["REU","Reunion"],["CRI","Costa Rica"],["MAR","Morocco"],["NOR","Norway"],["ISL","Iceland"],["CZE","Czechia"],["IDN","Indonesia"],["HRV","Croatia"],["ZAF","South Africa"],["MTQ","Martinique"],["GRC","Greece"],["PYF","French Polynesia"],["POL","Poland"],["THA","Thailand"],["COL","Colombia"],["ISR","Israel"],["NCL","New Caledonia"],["AND","Andorra"],["SVN","Slovenia"],["TUR","Turkey"],["RUS","Russia Federation"],["FIN","Finland"],["PRI","Puerto Rico"],["MUS","Mauritius"],["ARE","United Arab Emirates"],["CHL","Chile"],["BGR","Bulgaria"],["PAN","Panama"],["SEN","Senegal"],["DOM","Dominican Republic"],["MLT","Malta"],["TUN","Tunisia"],["GUF","French Guiana"],["MYS","Malaysia"],["KHM","Cambodia"],["IND","India"],["BWA","Botswana"],["SGP","Singapore"],["GTM","Guatemala"],["VIR","Virgin Islands, U.S."],["ABW","Aruba"],["ECU","Ecuador"],["BHS","Bahamas"],["JPN","Japan"]];
+
+// ISO3 to ISO2 mapping for D3 topojson
+const ISO3TO2 = {"AFG":"AF","ALA":"AX","ALB":"AL","DZA":"DZ","ASM":"AS","AND":"AD","AGO":"AO","AIA":"AI","ATA":"AQ","ATG":"AG","ARG":"AR","ARM":"AM","ABW":"AW","AUS":"AU","AUT":"AT","AZE":"AZ","BHS":"BS","BHR":"BH","BGD":"BD","BRB":"BB","BLR":"BY","BEL":"BE","BLZ":"BZ","BEN":"BJ","BMU":"BM","BTN":"BT","BOL":"BO","BES":"BQ","BIH":"BA","BWA":"BW","BVT":"BV","BRA":"BR","IOT":"IO","BRN":"BN","BGR":"BG","BFA":"BF","BDI":"BI","CPV":"CV","KHM":"KH","CMR":"CM","CAN":"CA","CYM":"KY","CAF":"CF","TCD":"TD","CHL":"CL","CHN":"CN","CXR":"CX","CCK":"CC","COL":"CO","COM":"KM","COG":"CG","COD":"CD","COK":"CK","CRI":"CR","CIV":"CI","HRV":"HR","CUB":"CU","CUW":"CW","CYP":"CY","CZE":"CZ","DNK":"DK","DJI":"DJ","DMA":"DM","DOM":"DO","ECU":"EC","EGY":"EG","SLV":"SV","GNQ":"GQ","ERI":"ER","EST":"EE","SWZ":"SZ","ETH":"ET","FLK":"FK","FRO":"FO","FJI":"FJ","FIN":"FI","FRA":"FR","GUF":"GF","PYF":"PF","ATF":"TF","GAB":"GA","GMB":"GM","GEO":"GE","DEU":"DE","GHA":"GH","GIB":"GI","GRC":"GR","GRL":"GL","GRD":"GD","GLP":"GP","GUM":"GU","GTM":"GT","GGY":"GG","GIN":"GN","GNB":"GW","GUY":"GY","HTI":"HT","HMD":"HM","VAT":"VA","HND":"HN","HKG":"HK","HUN":"HU","ISL":"IS","IND":"IN","IDN":"ID","IRN":"IR","IRQ":"IQ","IRL":"IE","IMN":"IM","ISR":"IL","ITA":"IT","JAM":"JM","JPN":"JP","JEY":"JE","JOR":"JO","KAZ":"KZ","KEN":"KE","KIR":"KI","PRK":"KP","KOR":"KR","KWT":"KW","KGZ":"KG","LAO":"LA","LVA":"LV","LBN":"LB","LSO":"LS","LBR":"LR","LBY":"LY","LIE":"LI","LTU":"LT","LUX":"LU","MAC":"MO","MDG":"MG","MWI":"MW","MYS":"MY","MDV":"MV","MLI":"ML","MLT":"MT","MHL":"MH","MTQ":"MQ","MRT":"MR","MUS":"MU","MYT":"YT","MEX":"MX","FSM":"FM","MDA":"MD","MCO":"MC","MNG":"MN","MNE":"ME","MSR":"MS","MAR":"MA","MOZ":"MZ","MMR":"MM","NAM":"NA","NRU":"NR","NPL":"NP","NLD":"NL","NCL":"NC","NZL":"NZ","NIC":"NI","NER":"NE","NGA":"NG","NIU":"NU","NFK":"NF","MKD":"MK","MNP":"MP","NOR":"NO","OMN":"OM","PAK":"PK","PLW":"PW","PSE":"PS","PAN":"PA","PNG":"PG","PRY":"PY","PER":"PE","PHL":"PH","PCN":"PN","POL":"PL","PRT":"PT","PRI":"PR","QAT":"QA","REU":"RE","ROU":"RO","RUS":"RU","RWA":"RW","BLM":"BL","SHN":"SH","KNA":"KN","LCA":"LC","MAF":"MF","SPM":"PM","VCT":"VC","WSM":"WS","SMR":"SM","STP":"ST","SAU":"SA","SEN":"SN","SRB":"RS","SYC":"SC","SLE":"SL","SGP":"SG","SXM":"SX","SVK":"SK","SVN":"SI","SLB":"SB","SOM":"SO","ZAF":"ZA","SGS":"GS","SSD":"SS","ESP":"ES","LKA":"LK","SDN":"SD","SUR":"SR","SJM":"SJ","SWE":"SE","CHE":"CH","SYR":"SY","TWN":"TW","TJK":"TJ","TZA":"TZ","THA":"TH","TLS":"TL","TGO":"TG","TKL":"TK","TON":"TO","TTO":"TT","TUN":"TN","TUR":"TR","TKM":"TM","TCA":"TC","TUV":"TV","UGA":"UG","UKR":"UA","ARE":"AE","GBR":"GB","USA":"US","UMI":"UM","URY":"UY","UZB":"UZ","VUT":"VU","VEN":"VE","VNM":"VN","VGB":"VG","VIR":"VI","WLF":"WF","ESH":"EH","YEM":"YE","ZMB":"ZM","ZWE":"ZW"};
+
+let mode = 'destinations';
+let selectedCountry = 'FRA';
+let chart = null;
+let svg, projection, path, g;
+
+// Populate dropdown
+const sel = document.getElementById('countrySelect');
+COUNTRIES.forEach(([code, name]) => {
+  const opt = document.createElement('option');
+  opt.value = code;
+  opt.textContent = name;
+  if (code === 'FRA') opt.selected = true;
+  sel.appendChild(opt);
+});
+sel.addEventListener('change', e => { selectedCountry = e.target.value; updateAll(); });
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnDest').classList.toggle('active', m === 'destinations');
+  document.getElementById('btnOrig').classList.toggle('active', m === 'origins');
+  updateAll();
+}
+
+function getData() {
+  if (mode === 'destinations') {
+    return RAW.filter(r => r.oc === selectedCountry && r.dc !== selectedCountry)
+      .sort((a,b) => b.n - a.n).slice(0, 10);
+  } else {
+    return RAW.filter(r => r.dc === selectedCountry && r.oc !== selectedCountry)
+      .sort((a,b) => b.n - a.n).slice(0, 10);
+  }
+}
+
+function getAllData() {
+  if (mode === 'destinations') {
+    return RAW.filter(r => r.oc === selectedCountry);
+  } else {
+    return RAW.filter(r => r.dc === selectedCountry);
+  }
+}
+
+function updateStats(data, allData) {
+  const total = allData.reduce((s,r) => s + r.n, 0);
+  const top = data[0];
+  const reach = new Set(mode === 'destinations' ? allData.map(r=>r.dc) : allData.map(r=>r.oc)).size;
+  const countryName = COUNTRIES.find(c=>c[0]===selectedCountry)?.[1] || selectedCountry;
+  document.getElementById('statTotal').textContent = total.toLocaleString();
+  document.getElementById('statCountry').textContent = mode === 'destinations' ? `from ${countryName}` : `to ${countryName}`;
+  document.getElementById('statTop').textContent = top ? (mode === 'destinations' ? top.dn : top.on) : '—';
+  document.getElementById('statTopN').textContent = top ? `${top.n.toLocaleString()} exchanges` : '';
+  document.getElementById('statReach').textContent = reach;
+}
+
+function updateChart(data) {
+  const labels = data.map(r => mode === 'destinations' ? r.dn : r.on);
+  const values = data.map(r => r.n);
+  const countryName = COUNTRIES.find(c=>c[0]===selectedCountry)?.[1] || selectedCountry;
+  document.getElementById('chartTitle').textContent = mode === 'destinations'
+    ? `Where ${countryName} members travel` : `Who visits ${countryName}`;
+  document.getElementById('chartSub').textContent = 'Top 10 · completed exchanges only · domestic excluded';
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('geoChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: '#B5D4F4',
+        borderColor: '#185FA5',
+        borderWidth: 1,
+        borderRadius: 3
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1916',
+          titleFont: { family: "'DM Mono', monospace", size: 11 },
+          bodyFont: { family: "'DM Mono', monospace", size: 11 },
+          callbacks: { label: ctx => ` ${ctx.parsed.x.toLocaleString()} exchanges` }
+        }
+      },
+      scales: {
+        x: { ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#9c9a94' }, grid: { color: '#f0ede8' } },
+        y: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#1a1916' }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function updateMap(data) {
+  if (!g) return;
+  const lookup = {};
+  data.forEach(r => {
+    const code = mode === 'destinations' ? r.dc : r.oc;
+    lookup[code] = r.n;
+  });
+  const maxVal = Math.max(...Object.values(lookup), 1);
+
+  g.selectAll('.country-path').attr('class', d => {
+    const iso3 = d.properties?.['ISO_A3'] || d.properties?.['iso_a3'] || '';
+    if (iso3 === selectedCountry) return 'country-path selected';
+    const v = lookup[iso3];
+    if (!v) return 'country-path';
+    const pct = v / maxVal;
+    if (pct > 0.6) return 'country-path dark';
+    if (pct > 0.2) return 'country-path medium';
+    return 'country-path light';
+  });
+}
+
+function updateAll() {
+  const data = getData();
+  const allData = getAllData();
+  updateStats(data, allData);
+  updateChart(data);
+  updateMap(data);
+}
+
+// Load world map
+const mapSvg = d3.select('#worldMap');
+const width = 680, height = 280;
+projection = d3.geoNaturalEarth1().scale(105).translate([width/2, height/2]);
+path = d3.geoPath().projection(projection);
+svg = mapSvg.attr('viewBox', `0 0 ${width} ${height}`);
+g = svg.append('g');
+const tooltip = document.getElementById('mapTooltip');
+
+d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world => {
+  const { feature } = await import('https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js').catch(() => ({feature: null}));
+}).catch(() => {});
+
+// Use d3 directly with topojson from CDN
+Promise.all([
+  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+]).then(([world]) => {
+  // topojson is loaded via script tag below
+  const countries = topojson.feature(world, world.objects.countries);
+
+  // Build numeric id to ISO3 mapping
+  const numToISO = {};
+  // We'll use a simplified approach - embed key mappings
+  const numericToISO3 = {"4":"AFG","8":"ALB","12":"DZA","24":"AGO","32":"ARG","36":"AUS","40":"AUT","50":"BGD","56":"BEL","64":"BTN","68":"BOL","76":"BRA","100":"BGR","104":"MMR","116":"KHM","120":"CMR","124":"CAN","152":"CHL","156":"CHN","170":"COL","178":"COG","180":"COD","188":"CRI","191":"HRV","192":"CUB","196":"CYP","203":"CZE","208":"DNK","214":"DOM","218":"ECU","818":"EGY","222":"SLV","231":"ETH","238":"FLK","246":"FIN","250":"FRA","266":"GAB","276":"DEU","288":"GHA","300":"GRC","320":"GTM","324":"GIN","332":"HTI","340":"HND","348":"HUN","356":"IND","360":"IDN","364":"IRN","368":"IRQ","372":"IRL","376":"ISR","380":"ITA","388":"JAM","392":"JPN","400":"JOR","398":"KAZ","404":"KEN","408":"PRK","410":"KOR","414":"KWT","418":"LAO","428":"LVA","422":"LBN","430":"LBR","434":"LBY","440":"LTU","442":"LUX","450":"MDG","454":"MWI","458":"MYS","484":"MEX","504":"MAR","508":"MOZ","516":"NAM","524":"NPL","528":"NLD","554":"NZL","558":"NIC","566":"NGA","578":"NOR","586":"PAK","591":"PAN","598":"PNG","600":"PRY","604":"PER","608":"PHL","616":"POL","620":"PRT","630":"PRI","634":"QAT","642":"ROU","643":"RUS","646":"RWA","682":"SAU","686":"SEN","694":"SLE","706":"SOM","710":"ZAF","724":"ESP","728":"SSD","729":"SDN","752":"SWE","756":"CHE","760":"SYR","762":"TJK","764":"THA","788":"TUN","792":"TUR","800":"UGA","804":"UKR","784":"ARE","826":"GBR","840":"USA","858":"URY","860":"UZB","862":"VEN","704":"VNM","887":"YEM","894":"ZMB","716":"ZWE","040":"AUT","756":"CHE","703":"SVK","705":"SVN","233":"EST","246":"FIN","352":"ISL","372":"IRL"};
+
+  g.selectAll('.country-path')
+    .data(countries.features)
+    .enter().append('path')
+    .attr('class', 'country-path')
+    .attr('d', path)
+    .attr('data-iso3', d => {
+      const num = String(d.id);
+      return numericToISO3[num] || '';
+    })
+    .on('mousemove', function(event, d) {
+      const num = String(d.id);
+      const iso3 = numericToISO3[num] || '';
+      const name = COUNTRIES.find(c=>c[0]===iso3)?.[1] || iso3;
+      const data = getData();
+      const lookup = {};
+      data.forEach(r => { lookup[mode==='destinations'?r.dc:r.oc] = r.n; });
+      const val = lookup[iso3];
+      if (name) {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (event.offsetX + 10) + 'px';
+        tooltip.style.top = (event.offsetY - 30) + 'px';
+        tooltip.textContent = val ? `${name}: ${val.toLocaleString()} exchanges` : name;
+      }
+    })
+    .on('mouseleave', () => { tooltip.style.display = 'none'; });
+
+  // Fix ISO3 via properties if available
+  g.selectAll('.country-path').attr('data-iso3', d => {
+    const num = String(d.id);
+    return numericToISO3[num] || '';
+  });
+
+  // Override path class update to use numeric id
+  const origUpdateMap = updateMap;
+  window.updateMap = function(data) {
+    const lookup = {};
+    data.forEach(r => {
+      const code = mode === 'destinations' ? r.dc : r.oc;
+      lookup[code] = r.n;
+    });
+    const maxVal = Math.max(...Object.values(lookup), 1);
+
+    g.selectAll('.country-path').attr('class', d => {
+      const num = String(d.id);
+      const iso3 = numericToISO3[num] || '';
+      if (iso3 === selectedCountry) return 'country-path selected';
+      const v = lookup[iso3];
+      if (!v) return 'country-path';
+      const pct = v / maxVal;
+      if (pct > 0.6) return 'country-path dark';
+      if (pct > 0.2) return 'country-path medium';
+      return 'country-path light';
+    });
+  };
+
+  updateAll();
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+</body>
+</html>
