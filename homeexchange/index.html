@@ -3,9 +3,204 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HomeExchange — Customer Behaviour & Retention Analysis — Tamás Imre</title>
-  <meta name="description" content="End-to-end churn analysis for a home-swap travel platform using SQL, BigQuery, and customer segmentation." />
+  <title>HomeExchange — Customer Behaviour &amp; Retention Analysis — Tamás Imre</title>
   <link rel="stylesheet" href="../style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <style>
+    /* Layout */
+    .page-wrap {
+      display: grid;
+      grid-template-columns: 200px minmax(0, 1fr);
+      gap: 0;
+      max-width: 1020px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: sticky;
+      top: 80px;
+      height: calc(100vh - 100px);
+      padding: 2rem 1.5rem 2rem 0;
+      border-right: 0.5px solid var(--border);
+      overflow-y: auto;
+    }
+
+    .sidebar-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+
+    .sidebar-nav { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+
+    .sidebar-nav a {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      padding: 5px 8px;
+      border-radius: 4px;
+      line-height: 1.4;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .sidebar-nav a:hover { color: var(--text-primary); }
+
+    .sidebar-nav a.active {
+      color: var(--text-primary);
+      font-weight: 500;
+      background: var(--tag-bg);
+    }
+
+    .sidebar-nav .nav-num {
+      font-size: 9px;
+      color: var(--text-tertiary);
+      display: block;
+      margin-bottom: 1px;
+    }
+
+    .sidebar-nav a.active .nav-num { color: var(--text-secondary); }
+
+    /* Main content */
+    .main-content {
+      padding: 3rem 0 4rem 2.5rem;
+    }
+
+    /* Project header */
+    .project-header {
+      padding-bottom: 2.5rem;
+      margin-bottom: 0;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .project-header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    .project-header h1 strong { font-weight: 500; }
+
+    .project-header p {
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--text-secondary);
+      max-width: 520px;
+      line-height: 1.8;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Chapter sections */
+    .chapter {
+      padding: 3rem 0;
+      border-bottom: 0.5px solid var(--border);
+      scroll-margin-top: 90px;
+    }
+
+    .chapter:last-child { border-bottom: none; }
+
+    .chapter-header {
+      margin-bottom: 2rem;
+    }
+
+    .chapter-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .chapter-title {
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+
+    .chapter-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 300;
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    /* Override container for inner content */
+    .main-content .stat-grid,
+    .main-content .finding-grid,
+    .main-content .projects-grid { max-width: 100%; }
+
+    /* Geo explorer overrides */
+    .explorer-wrap { background: #fff; border: 0.5px solid #e8e6e0; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; }
+    .controls { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1.5rem; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    .control-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #9c9a94; letter-spacing: 0.08em; text-transform: uppercase; }
+    select { font-family: 'DM Mono', monospace; font-size: 12px; padding: 7px 10px; border: 0.5px solid #c8c5bc; border-radius: 4px; background: #fff; color: #1a1916; cursor: pointer; min-width: 200px; }
+    .toggle-wrap { display: flex; border: 0.5px solid #c8c5bc; border-radius: 4px; overflow: hidden; }
+    .toggle-btn { font-family: 'DM Mono', monospace; font-size: 11px; padding: 7px 14px; background: #fff; color: #5c5a54; border: none; cursor: pointer; }
+    .toggle-btn.active { background: #1a1916; color: #fff; }
+    .summary-stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; border: 0.5px solid #e8e6e0; border-radius: 8px; overflow: hidden; margin-bottom: 1.25rem; }
+    .sum-stat { background: #fafaf8; padding: .8rem 1rem; }
+    .sum-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #9c9a94; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+    .sum-val { font-size: 18px; font-weight: 500; letter-spacing: -.02em; }
+    .sum-sub { font-size: 11px; color: #5c5a54; font-weight: 300; margin-top: 2px; }
+    .map-wrap { position: relative; width: 100%; height: 240px; margin-bottom: 1rem; background: #f5f3ef; border-radius: 6px; overflow: hidden; }
+    .map-wrap svg { width: 100%; height: 100%; }
+    .c { fill: #e8e4dc; stroke: #fff; stroke-width: .4px; transition: fill .25s; }
+    .c.sel { fill: #1a1916; } .c.hi3 { fill: #185FA5; } .c.hi2 { fill: #378ADD; } .c.hi1 { fill: #B5D4F4; }
+    .tip { position: absolute; background: #1a1916; color: #fff; font-family: 'DM Mono', monospace; font-size: 11px; padding: 5px 9px; border-radius: 3px; pointer-events: none; display: none; white-space: nowrap; z-index: 10; }
+    .chart-lbl { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .chart-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: #9c9a94; margin-bottom: .75rem; }
+
+    /* Covid / chart wraps */
+    .chart-wrap { background: #fff; border: 0.5px solid #e8e6e0; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; }
+    .chart-title { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .chart-subtitle { font-family: 'DM Sans', sans-serif; font-size: 13px; color: #5c5a54; font-weight: 300; margin-bottom: 1.25rem; }
+    .annotation-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .ann { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 2px; }
+    .ann-covid { background: #fff0f0; color: #a32d2d; }
+    .ann-recovery { background: #e6f3e6; color: #1a5c1a; }
+    .ann-new { background: #faeeda; color: #7a4f00; }
+    .stat-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; border: 0.5px solid #e8e6e0; border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem; }
+    .stat { background: #fff; padding: .9rem 1rem; }
+    .stat-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #9c9a94; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+    .stat-val { font-size: 22px; font-weight: 500; letter-spacing: -.02em; }
+    .stat-desc { font-size: 11px; color: #5c5a54; font-weight: 300; margin-top: 2px; }
+    .red { color: #a32d2d; } .green { color: #1a5c1a; } .amber { color: #7a4f00; }
+
+    /* Recommendations */
+    .rec-card { background: #fff; border: 0.5px solid #e8e6e0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+    .rec-number { font-family: 'DM Mono', monospace; font-size: 11px; color: #9c9a94; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+    .rec-title { font-size: 16px; font-weight: 500; margin-bottom: 0.5rem; }
+    .rec-body { font-size: 14px; color: #5c5a54; font-weight: 300; line-height: 1.8; margin-bottom: 1rem; }
+    .rec-evidence { display: flex; align-items: flex-start; gap: 10px; background: #f0ede8; border-radius: 8px; padding: .75rem 1rem; margin-bottom: .75rem; }
+    .rec-evidence-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #9c9a94; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; padding-top: 1px; min-width: 60px; }
+    .rec-evidence-text { font-family: 'DM Mono', monospace; font-size: 12px; color: #5c5a54; line-height: 1.6; }
+    .rec-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .rec-tag { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 2px; background: #f0ede8; color: #5c5a54; }
+    .rec-tag.product { background: #f0eefe; color: #3d2a9e; }
+    .rec-tag.marketing { background: #e8f0fb; color: #1a4580; }
+    .rec-tag.growth { background: #e6f3e6; color: #1a5c1a; }
+    .rec-tag.retention { background: #faf0d8; color: #7a4f00; }
+
+    @media (max-width: 720px) {
+      .page-wrap { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main-content { padding-left: 0; }
+    }
+  </style>
 </head>
 <body>
 
@@ -15,337 +210,1607 @@
     <ul class="nav-links">
       <li><a href="/#projects">projects</a></li>
       <li><a href="/#experience">experience</a></li>
-      <li><a href="/#skills">skills</a></li>
       <li><a href="mailto:imre.tamas@gmail.com">contact</a></li>
     </ul>
   </div>
 </nav>
 
-<div class="container">
-  <a href="/" class="back-link">← back to portfolio</a>
+<div class="page-wrap">
 
-  <!-- Project hero -->
-  <section class="project-hero fade-up">
-    <p class="project-hero-meta">Le Wagon Bootcamp · 2025 · In progress</p>
-    <h1><strong>HomeExchange</strong><br>Customer Behaviour &amp; Retention Analysis</h1>
-    <p class="project-hero-desc">
-      HomeExchange is a home-swap travel platform where members pay an annual fee of €149 to access peer-to-peer house exchanges. The goal of this project is to understand why members do not renew their subscription and identify actionable levers to reduce churn.
-    </p>
-    <div class="tag-row">
-      <span class="tag chip-sql" style="background:var(--blue-bg);color:var(--blue-text);">SQL</span>
-      <span class="tag chip-bq" style="background:var(--amber-bg);color:var(--amber-text);">BigQuery</span>
-      <span class="tag chip-bi" style="background:var(--purple-bg);color:var(--purple-text);">Looker</span>
-      <span class="tag">Churn Modelling</span>
-      <span class="tag">Customer Segmentation</span>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Analysis</div>
+    <ul class="sidebar-nav">
+      <li><a href="#overview" id="nav-overview">
+        <span class="nav-num">00</span>Overview
+      </a></li>
+      <li><a href="#churn" id="nav-churn">
+        <span class="nav-num">01</span>Who are our customers?
+      </a></li>
+      <li><a href="#activity" id="nav-activity">
+        <span class="nav-num">02</span>How engaged are they?
+      </a></li>
+      <li><a href="#retention" id="nav-retention">
+        <span class="nav-num">03</span>What makes them stay?
+      </a></li>
+      <li><a href="#geography" id="nav-geography">
+        <span class="nav-num">04</span>Where do they go?
+      </a></li>
+      <li><a href="#covid" id="nav-covid">
+        <span class="nav-num">05</span>Covid impact
+      </a></li>
+      <li><a href="#recommendations" id="nav-recommendations">
+        <span class="nav-num">06</span>Recommendations
+      </a></li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+
+    <!-- 00 Overview -->
+    <div id="overview" class="project-header">
+      <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-tertiary);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1rem;">Le Wagon Bootcamp · 2025 · BigQuery · SQL · D3.js</p>
+      <h1><strong>HomeExchange</strong><br>Customer Behaviour &amp; Retention Analysis</h1>
+      <p>HomeExchange is a French home-swap travel platform where members pay €149/year to access peer-to-peer house exchanges. This analysis covers 70,726 subscribers and 11.9 million exchange records from 2019–2022 — exploring who stays, who leaves, where they go, and what the business should do about it.</p>
+      <div class="tag-row">
+        <span class="tag">SQL · BigQuery</span>
+        <span class="tag">Churn Modelling</span>
+        <span class="tag">Customer Segmentation</span>
+        <span class="tag">Geographic Analysis</span>
+        <span class="tag">D3.js</span>
+      </div>
+      <div class="stat-grid" style="margin-top:1.5rem;">
+        <div class="stat-card"><div class="stat-label">Subscribers</div><div class="stat-value">70,726</div><div class="stat-sub">2019–2021</div></div>
+        <div class="stat-card"><div class="stat-label">Exchange records</div><div class="stat-value">11.9M</div><div class="stat-sub">2019–2022</div></div>
+        <div class="stat-card"><div class="stat-label">Countries</div><div class="stat-value">70</div><div class="stat-sub">origin &amp; destination</div></div>
+        <div class="stat-card"><div class="stat-label">Overall churn</div><div class="stat-value">44.7%</div><div class="stat-sub">baseline rate</div></div>
+      </div>
     </div>
-  </section>
 
-  <!-- Stats -->
-  <section class="section fade-up">
-    <div class="section-label">Project at a glance</div>
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-label">Tables</div>
-        <div class="stat-value">2</div>
-        <div class="stat-sub">Subscriptions · Exchanges</div>
+    <!-- 01 Who are our customers -->
+    <div id="churn" class="chapter">
+      <div class="chapter-header">
+        <div class="chapter-num">01 — Customer segments</div>
+        <div class="chapter-title">Who are our customers — and do they stay?</div>
+        <div class="chapter-desc">Three segments with very different retention profiles. The year 1 → 2 inflection is the sharpest in the lifecycle. Activity is the strongest predictor of renewal.</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Data from</div>
-        <div class="stat-value">2019</div>
-        <div class="stat-sub">through 2022</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Duplicates found</div>
-        <div class="stat-value">276</div>
-        <div class="stat-sub">resolved via dedup CTE</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Churn driver</div>
-        <div class="stat-value">renew</div>
-        <div class="stat-sub">0 = churned · 1 = renewed</div>
-      </div>
+      <!-- Key stats -->
+  <div class="stat-grid fade-up">
+    <div class="stat-card">
+      <div class="stat-label">New customer churn</div>
+      <div class="stat-value" style="color:#a32d2d;">56.6%</div>
+      <div class="stat-sub">highest of any segment</div>
     </div>
-  </section>
+    <div class="stat-card">
+      <div class="stat-label">Second year churn</div>
+      <div class="stat-value" style="color:#854F0B;">38.5%</div>
+      <div class="stat-sub">crucial turning point</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">High value churn</div>
+      <div class="stat-value" style="color:#1a5c1a;">40.8%</div>
+      <div class="stat-sub">3+ years subscribed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total customers</div>
+      <div class="stat-value">70,726</div>
+      <div class="stat-sub">2019–2021</div>
+    </div>
+  </div>
 
-  <!-- Context -->
+  <!-- Segment definition -->
   <section class="section fade-up">
-    <div class="section-label">Business context</div>
+    <div class="section-label">Segment definitions</div>
     <div class="content-block">
-      <h2>How HomeExchange works</h2>
-      <p>Registration is free. The €149 annual membership only applies once a member secures their first exchange. This creates a distinct behavioural split: some users subscribe and never exchange (particularly American users), while European users tend to validate the system before committing.</p>
-      <p>This cultural difference is a key variable in the churn analysis — churn drivers are not uniform across geographies.</p>
+      <h2>How segments are defined</h2>
+      <p>Segments are based on tenure — the number of years between a customer's first and last subscription date. This approach focuses analysis on the most commercially important question: at what point in the customer lifecycle does churn happen?</p>
+    </div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">New Customer</div>
+        <div class="finding-text">Tenure = 0 years. First subscription, never renewed. The highest-risk group — over half will not return for a second year.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Second Year Customer</div>
+        <div class="finding-text">Tenure = 1–2 years. Has renewed at least once. The crucial turning point — churn drops sharply from new customer levels.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">High Value Customer</div>
+        <div class="finding-text">Tenure = 3+ years. Long-term member. Lower churn but slightly higher than second year — may reflect a loyalty plateau.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chart -->
+  <section class="section fade-up">
+    <div class="section-label">Churn rate by segment</div>
+    <div class="chart-wrap">
+      <div class="chart-title">Churn rate (%) by customer segment</div>
+      <div class="chart-sub">Customer base 2019–2021 · Churn defined as no renewal within 13 months of last subscription</div>
+      <canvas id="churnChart" style="max-height:200px;"></canvas>
+    </div>
+  </section>
+
+  <!-- SQL -->
+  <section class="section fade-up">
+    <div class="section-label">Query</div>
+    <div class="content-block">
+      <h2>Churn rate by customer segment</h2>
+    </div>
+    <div class="code-block">
+      <div class="code-block-toggle" onclick="this.parentElement.classList.toggle('open')">
+        <span class="code-block-label">BigQuery SQL · churn_by_segment.sql</span>
+        <span class="code-block-chevron">▾ show query</span>
+      </div>
+      <div class="code-block-body">
+        <pre><span class="code-kw">SELECT</span>
+  customer_segment,
+  <span class="code-fn">COUNT</span>(*)                                 <span class="code-kw">AS</span> total_customers,
+  <span class="code-fn">COUNTIF</span>(is_churned = <span class="code-nu">1</span>)                 <span class="code-kw">AS</span> churned,
+  <span class="code-fn">COUNTIF</span>(is_churned = <span class="code-nu">0</span>)                 <span class="code-kw">AS</span> retained,
+  <span class="code-fn">ROUND</span>(<span class="code-fn">COUNTIF</span>(is_churned = <span class="code-nu">1</span>) * <span class="code-nu">100.0</span>
+    / <span class="code-fn">COUNT</span>(*), <span class="code-nu">1</span>)                          <span class="code-kw">AS</span> churn_rate_pct
+<span class="code-kw">FROM</span> `lewagon-457508`.home_exchange_reporting.v_customer_activity
+<span class="code-kw">GROUP BY</span> <span class="code-nu">1</span>
+<span class="code-kw">ORDER BY</span>
+  <span class="code-kw">CASE</span> customer_segment
+    <span class="code-kw">WHEN</span> <span class="code-st">'New Customer'</span>         <span class="code-kw">THEN</span> <span class="code-nu">1</span>
+    <span class="code-kw">WHEN</span> <span class="code-st">'Second Year Customer'</span> <span class="code-kw">THEN</span> <span class="code-nu">2</span>
+    <span class="code-kw">WHEN</span> <span class="code-st">'High Value Customer'</span>  <span class="code-kw">THEN</span> <span class="code-nu">3</span>
+  <span class="code-kw">END</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Findings -->
+  <section class="section fade-up">
+    <div class="section-label">Key findings</div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Year one is the biggest risk</div>
+        <div class="finding-text">56.6% of new customers do not renew — more than half are lost before experiencing a second year of membership</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">The year 1 → 2 inflection</div>
+        <div class="finding-text">Churn drops 18 percentage points from New to Second Year — the sharpest change in the entire customer lifecycle</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">High value plateau</div>
+        <div class="finding-text">High Value customers churn slightly more than Second Year (40.8% vs 38.5%) — suggesting loyalty plateaus after year 2 without active engagement</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Largest segment is High Value</div>
+        <div class="finding-text">28,617 High Value customers — the biggest segment — shows the platform does retain a strong long-term base once members pass year two</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Activity vs churn -->
+  <section class="section fade-up">
+    <div class="section-label">Activity as a churn predictor</div>
+    <div class="content-block">
+      <h2>The more you exchange, the more you stay</h2>
+      <p>Exchange activity is the single strongest predictor of renewal. The relationship is perfectly linear — every step up in activity reduces churn by approximately 10 percentage points.</p>
+    </div>
+    <div class="stat-grid" style="margin-bottom:1.5rem;">
+      <div class="stat-card">
+        <div class="stat-label">Never requested</div>
+        <div class="stat-value" style="color:#a32d2d;">67.0%</div>
+        <div class="stat-sub">5,086 customers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Requested, never completed</div>
+        <div class="stat-value" style="color:#854F0B;">56.1%</div>
+        <div class="stat-sub">14,642 customers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">High activity (10+)</div>
+        <div class="stat-value" style="color:#1a5c1a;">26.5%</div>
+        <div class="stat-sub">10,741 customers</div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Churn rate by activity segment</div>
+      <div class="chart-sub">Never requested → Requested never completed → Low → Medium → High activity</div>
+      <canvas id="activityChurnChart" style="max-height:180px;"></canvas>
+    </div>
+  </section>
+
+  <!-- Continent churn -->
+  <section class="section fade-up">
+    <div class="section-label">Churn by geography</div>
+    <div class="content-block">
+      <h2>Europe and North America churn almost identically</h2>
+      <p>The widely held assumption that American subscribers behave differently from European ones is not supported by the churn data. Both continents churn at ~43% — the difference is negligible. Higher churn in Asia and South America likely reflects lower brand awareness and less mature exchange communities.</p>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Churn rate by continent</div>
+      <div class="chart-sub">Subscribers only · 2019–2021</div>
+      <canvas id="continentChurnChart" style="max-height:180px;"></canvas>
+    </div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Europe vs North America</div>
+        <div class="finding-text">43.8% vs 43.3% — a 0.5 point difference. The assumed cultural gap in subscription behaviour does not translate to a measurable churn difference</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Asia &amp; South America</div>
+        <div class="finding-text">53.2% and 52.4% churn — ~10 points higher than core markets. Smaller communities mean fewer available matches, reducing platform value</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Core markets dominate</div>
+        <div class="finding-text">Europe (46,428) and North America (17,074) represent 89% of all subscribers — churn strategy should focus here first</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Geographic expansion risk</div>
+        <div class="finding-text">Expanding to new continents without sufficient local community density will generate high early churn — critical mass of local listings is needed first</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recommendations -->
+  <section class="section fade-up">
+    <div class="section-label">Recommendations</div>
+    <div class="content-block">
+      <h2>Where to focus retention efforts</h2>
+      <ul>
+        <li><strong>Onboarding campaign:</strong> Push new subscribers toward their first completed exchange within 90 days — activity is the strongest predictor of renewal</li>
+        <li><strong>Year one re-engagement:</strong> Identify subscribers approaching their renewal date with zero completed exchanges and trigger targeted campaigns</li>
+        <li><strong>High value nurturing:</strong> The slight churn uptick in long-term members suggests a loyalty programme or milestone recognition could prevent attrition at the plateau</li>
+      </ul>
+    </div>
+  </section>
+    </div>
+
+    <!-- 02 How engaged -->
+    <div id="activity" class="chapter">
+      <div class="chapter-header">
+        <div class="chapter-num">02 — Engagement</div>
+        <div class="chapter-title">How engaged are our members?</div>
+        <div class="chapter-desc">Second Year customers are the most active. Only ~5% of requests become completed exchanges. Multi-home users show perfect symmetry between guest and host activity.</div>
+      </div>
+      <!-- Key stats -->
+  <div class="stat-grid fade-up">
+    <div class="stat-card">
+      <div class="stat-label">Second Year avg exchanges</div>
+      <div class="stat-value" style="color:#1a5c1a;">5.84</div>
+      <div class="stat-sub">highest of any segment</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">High Value avg nights/exchange</div>
+      <div class="stat-value">6.6</div>
+      <div class="stat-sub">longest stays</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Never completed an exchange</div>
+      <div class="stat-value" style="color:#a32d2d;">~28%</div>
+      <div class="stat-sub">across all segments</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Platform success rate</div>
+      <div class="stat-value">~5%</div>
+      <div class="stat-sub">requests → completions</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <section class="section fade-up">
+    <div class="section-label">Exchanges per active user</div>
+    <div class="chart-wrap">
+      <div class="chart-title">Average completed exchanges per active user</div>
+      <div class="chart-sub">Active users only — excludes customers with zero completed exchanges</div>
+      <canvas id="exchangesChart" style="max-height:180px;"></canvas>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Never completed an exchange</div>
+    <div class="chart-wrap">
+      <div class="chart-title">% of customers who never completed an exchange</div>
+      <div class="chart-sub">Includes all customers in each segment</div>
+      <canvas id="neverChart" style="max-height:180px;"></canvas>
+    </div>
+  </section>
+
+  <!-- Data table -->
+  <section class="section fade-up">
+    <div class="section-label">Full metrics table</div>
+    <div class="content-block">
+      <h2>Activity metrics by segment</h2>
+      <p>Medians used throughout to avoid distortion from extreme outliers. Success rate is the percentage of exchange requests that result in a completed exchange.</p>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'DM Mono',monospace;">
+        <thead>
+          <tr style="border-bottom:1px solid #e8e6e0;">
+            <th style="text-align:left;padding:10px 8px;color:#9c9a94;font-weight:400;">Segment</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Customers</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Median requests</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Avg completed*</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Median nights</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Success rate</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Never completed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:0.5px solid #e8e6e0;">
+            <td style="padding:10px 8px;font-weight:500;">New Customer</td>
+            <td style="text-align:right;padding:10px 8px;">19,538</td>
+            <td style="text-align:right;padding:10px 8px;">42</td>
+            <td style="text-align:right;padding:10px 8px;">3.87</td>
+            <td style="text-align:right;padding:10px 8px;">9</td>
+            <td style="text-align:right;padding:10px 8px;">6.3%</td>
+            <td style="text-align:right;padding:10px 8px;color:#a32d2d;">26.6%</td>
+          </tr>
+          <tr style="border-bottom:0.5px solid #e8e6e0;background:#f5f3ef;">
+            <td style="padding:10px 8px;font-weight:500;">Second Year Customer</td>
+            <td style="text-align:right;padding:10px 8px;">22,566</td>
+            <td style="text-align:right;padding:10px 8px;">69</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;font-weight:500;">5.84</td>
+            <td style="text-align:right;padding:10px 8px;">16</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;font-weight:500;">4.9%</td>
+            <td style="text-align:right;padding:10px 8px;">24.4%</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 8px;font-weight:500;">High Value Customer</td>
+            <td style="text-align:right;padding:10px 8px;">28,609</td>
+            <td style="text-align:right;padding:10px 8px;">54</td>
+            <td style="text-align:right;padding:10px 8px;">5.06</td>
+            <td style="text-align:right;padding:10px 8px;">13</td>
+            <td style="text-align:right;padding:10px 8px;">4.2%</td>
+            <td style="text-align:right;padding:10px 8px;color:#a32d2d;">31.6%</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:#9c9a94;font-family:'DM Mono',monospace;margin-top:8px;">* avg completed = total completed exchanges / customers with at least one completion</p>
+    </div>
+  </section>
+
+  <!-- SQL -->
+  <section class="section fade-up">
+    <div class="section-label">Query</div>
+    <div class="code-block">
+      <div class="code-block-toggle" onclick="this.parentElement.classList.toggle('open')">
+        <span class="code-block-label">BigQuery SQL · activity_metrics.sql</span>
+        <span class="code-block-chevron">▾ show query</span>
+      </div>
+      <div class="code-block-body">
+        <pre><span class="code-kw">SELECT</span>
+  customer_segment,
+  <span class="code-fn">COUNT</span>(*)                                           <span class="code-kw">AS</span> total_customers,
+  <span class="code-fn">APPROX_QUANTILES</span>(total_requests, <span class="code-nu">100</span>)[<span class="code-fn">OFFSET</span>(<span class="code-nu">50</span>)]   <span class="code-kw">AS</span> median_requests,
+  <span class="code-fn">ROUND</span>(<span class="code-fn">SUM</span>(completed_exchanges) * <span class="code-nu">1.0</span>
+    / <span class="code-fn">NULLIF</span>(<span class="code-fn">COUNTIF</span>(completed_exchanges > <span class="code-nu">0</span>), <span class="code-nu">0</span>),
+    <span class="code-nu">2</span>)                                                <span class="code-kw">AS</span> avg_per_active_user,
+  <span class="code-fn">APPROX_QUANTILES</span>(total_nights, <span class="code-nu">100</span>)[<span class="code-fn">OFFSET</span>(<span class="code-nu">50</span>)]     <span class="code-kw">AS</span> median_nights,
+  <span class="code-fn">ROUND</span>(<span class="code-fn">AVG</span>(success_rate_pct), <span class="code-nu">1</span>)                   <span class="code-kw">AS</span> avg_success_rate,
+  <span class="code-fn">ROUND</span>(<span class="code-fn">COUNTIF</span>(completed_exchanges = <span class="code-nu">0</span>) * <span class="code-nu">100.0</span>
+    / <span class="code-fn">COUNT</span>(*), <span class="code-nu">1</span>)                                  <span class="code-kw">AS</span> pct_never_completed
+<span class="code-kw">FROM</span> `lewagon-457508`.home_exchange_reporting.v_customer_activity
+<span class="code-kw">GROUP BY</span> <span class="code-nu">1</span>
+<span class="code-kw">ORDER BY</span>
+  <span class="code-kw">CASE</span> customer_segment
+    <span class="code-kw">WHEN</span> <span class="code-st">'New Customer'</span>         <span class="code-kw">THEN</span> <span class="code-nu">1</span>
+    <span class="code-kw">WHEN</span> <span class="code-st">'Second Year Customer'</span> <span class="code-kw">THEN</span> <span class="code-nu">2</span>
+    <span class="code-kw">WHEN</span> <span class="code-st">'High Value Customer'</span>  <span class="code-kw">THEN</span> <span class="code-nu">3</span>
+  <span class="code-kw">END</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Findings -->
+  <section class="section fade-up">
+    <div class="section-label">Key findings</div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Second Year most active</div>
+        <div class="finding-text">5.84 avg completed exchanges — more than High Value (5.06). Peak engagement happens in years 1–2, not later</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">High Value stays longest</div>
+        <div class="finding-text">Median 13 nights vs 9 for New customers. Experienced members plan longer, more deliberate trips</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Platform matching challenge</div>
+        <div class="finding-text">Only ~5% of requests result in a completed exchange across all segments — the platform has a significant supply-demand matching gap</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">31.6% of High Value never completed</div>
+        <div class="finding-text">Surprisingly, nearly a third of long-term members never completed an exchange — likely explains the churn plateau seen in year 3+</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Multi-home section -->
+  <section class="section fade-up">
+    <div class="section-label">Home listings &amp; engagement</div>
+
+    <div class="content-block">
+      <h2>Multi-home users are platform anchors</h2>
+      <p>Users who list more than one home are significantly more active on both sides of the platform — they travel more as guests and host more in return. The symmetry between guest and host activity is remarkable: 3+ home users average 7.7 completed exchanges as guests and 7.7 as hosts.</p>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:1.5rem;">
+      <div class="stat-card">
+        <div class="stat-label">1 home churn rate</div>
+        <div class="stat-value" style="color:#a32d2d;">44.6%</div>
+        <div class="stat-sub">53,213 subscribers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">2 homes churn rate</div>
+        <div class="stat-value" style="color:#854F0B;">40.8%</div>
+        <div class="stat-sub">12,062 subscribers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">3+ homes churn rate</div>
+        <div class="stat-value" style="color:#1a5c1a;">38.6%</div>
+        <div class="stat-sub">2,891 subscribers</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Average completed exchanges by homes listed</div>
+      <div class="chart-sub">Guest activity vs host activity — subscribers only</div>
+      <canvas id="homesChart" style="max-height:200px;"></canvas>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Average nights by homes listed</div>
+      <div class="chart-sub">Guest nights vs host nights — subscribers only</div>
+      <canvas id="nightsHomesChart" style="max-height:200px;"></canvas>
     </div>
 
     <div class="finding-grid">
       <div class="finding-card">
-        <div class="finding-title">Potential churn drivers</div>
-        <div class="finding-text">User tenure · guest &amp; host activity · house location · sponsorship · promotional discounts</div>
+        <div class="finding-title">Perfect symmetry</div>
+        <div class="finding-text">3+ home users average 7.7 exchanges as guest and 7.7 as host — they give exactly as much as they take, the ideal platform participant</div>
       </div>
       <div class="finding-card">
-        <div class="finding-title">American users</div>
-        <div class="finding-text">Often subscribe without an immediate exchange — higher risk of early churn</div>
+        <div class="finding-title">2.4x more active</div>
+        <div class="finding-text">3+ home subscribers complete 7.7 exchanges vs 3.2 for single-home users — nearly 2.5x more active on both sides of the platform</div>
       </div>
       <div class="finding-card">
-        <div class="finding-title">European users</div>
-        <div class="finding-text">Tend to validate the system before subscribing — lower early churn but price-sensitive on renewal</div>
+        <div class="finding-title">Strong conversion signal</div>
+        <div class="finding-text">60% of 3+ home hosts are paying subscribers vs only 14.5% of single-home hosts — listing multiple homes is the strongest subscription conversion predictor</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Trigger: second home listing</div>
+        <div class="finding-text">Users who add a second property should be priority targets for subscription conversion — they are 3x more likely to already be subscribers than single-home hosts</div>
       </div>
     </div>
   </section>
-
-  <!-- Data model -->
-  <section class="section fade-up">
-    <div class="section-label">Data model</div>
-    <div class="content-block">
-      <h2>Two source tables</h2>
-      <p>The <strong>subscriptions</strong> table contains one row per subscription event per user. Users who renew appear multiple times. The <strong>exchanges</strong> table contains conversation and exchange records — including reciprocal exchanges, which require careful counting to avoid double-counting.</p>
     </div>
 
-    <div class="content-block">
-      <h2>Key data quality issues found</h2>
-      <ul>
-        <li>276 duplicate rows in the subscriptions table (same user, same subscription year)</li>
-        <li>Inconsistent <code>home_type</code> casing — "Home" vs "apartment"</li>
-        <li>Null values in <code>country</code>, <code>region</code>, <code>city</code> across both tables</li>
-        <li>Reciprocal exchanges create two exchange rows per conversation — requires deduplication logic</li>
-        <li><code>guest_count = 0</code> on several exchange rows despite completed exchanges</li>
-      </ul>
+    <!-- 03 What makes them stay -->
+    <div id="retention" class="chapter">
+      <div class="chapter-header">
+        <div class="chapter-num">03 — Retention levers</div>
+        <div class="chapter-title">What makes members stay?</div>
+        <div class="chapter-desc">Promotions reduce churn from 46.8% to just 7%. Referral alone cuts it to 34.2%. Combined they produce 4.9% churn — the lowest in the dataset.</div>
+      </div>
+      <!-- Key stats -->
+  <div class="stat-grid fade-up">
+    <div class="stat-card">
+      <div class="stat-label">Baseline churn (no referral, no promo)</div>
+      <div class="stat-value" style="color:#a32d2d;">46.8%</div>
+      <div class="stat-sub">62,449 customers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Referral only</div>
+      <div class="stat-value" style="color:#854F0B;">34.2%</div>
+      <div class="stat-sub">−12.6 points</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Promotion only</div>
+      <div class="stat-value" style="color:#1a5c1a;">7.0%</div>
+      <div class="stat-sub">−39.8 points</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Referral + promotion</div>
+      <div class="stat-value" style="color:#1a5c1a;">4.9%</div>
+      <div class="stat-sub">lowest in dataset</div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <section class="section fade-up">
+    <div class="section-label">Churn rate by acquisition type</div>
+    <div class="chart-wrap">
+      <div class="chart-title">Churn rate (%) by referral and promotion status</div>
+      <div class="chart-sub">Churn defined as no renewal within 13 months of last subscription · 2019–2021</div>
+      <canvas id="promoChart" style="max-height:200px;"></canvas>
     </div>
   </section>
 
-  <!-- SQL: dedup -->
+  <!-- Data table -->
   <section class="section fade-up">
-    <div class="section-label">Data cleaning — subscriptions</div>
-    <div class="content-block">
-      <h2>Deduplicated customer view</h2>
-      <p>The core challenge was normalising multiple subscription rows per user into a single customer record, preserving all relevant history. The query below produces one row per customer with engineered tenure, churn, and segment features.</p>
+    <div class="section-label">Full results</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'DM Mono',monospace;">
+        <thead>
+          <tr style="border-bottom:1px solid #e8e6e0;">
+            <th style="text-align:left;padding:10px 8px;color:#9c9a94;font-weight:400;">Referred</th>
+            <th style="text-align:left;padding:10px 8px;color:#9c9a94;font-weight:400;">Had promotion</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Customers</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Churn rate</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">vs baseline</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:0.5px solid #e8e6e0;">
+            <td style="padding:10px 8px;">No</td>
+            <td style="padding:10px 8px;">No</td>
+            <td style="text-align:right;padding:10px 8px;">62,449</td>
+            <td style="text-align:right;padding:10px 8px;color:#a32d2d;font-weight:500;">46.8%</td>
+            <td style="text-align:right;padding:10px 8px;color:#9c9a94;">baseline</td>
+          </tr>
+          <tr style="border-bottom:0.5px solid #e8e6e0;background:#f5f3ef;">
+            <td style="padding:10px 8px;">No</td>
+            <td style="padding:10px 8px;">Yes</td>
+            <td style="text-align:right;padding:10px 8px;">1,889</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;font-weight:500;">7.0%</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;">−39.8 pts</td>
+          </tr>
+          <tr style="border-bottom:0.5px solid #e8e6e0;">
+            <td style="padding:10px 8px;">Yes</td>
+            <td style="padding:10px 8px;">No</td>
+            <td style="text-align:right;padding:10px 8px;">6,039</td>
+            <td style="text-align:right;padding:10px 8px;color:#854F0B;font-weight:500;">34.2%</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;">−12.6 pts</td>
+          </tr>
+          <tr style="background:#f5f3ef;">
+            <td style="padding:10px 8px;">Yes</td>
+            <td style="padding:10px 8px;">Yes</td>
+            <td style="text-align:right;padding:10px 8px;">349</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;font-weight:500;">4.9%</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;">−41.9 pts</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+  </section>
 
+  <!-- SQL -->
+  <section class="section fade-up">
+    <div class="section-label">Query</div>
     <div class="code-block">
-      <div class="code-block-toggle" onclick="this.parentElement.classList.toggle('open');this.querySelector('.code-block-chevron').textContent=this.parentElement.classList.contains('open')?'▴ hide query':'▾ show query'">
-        <span class="code-block-label">BigQuery SQL · customer_base.sql</span>
+      <div class="code-block-toggle" onclick="this.parentElement.classList.toggle('open')">
+        <span class="code-block-label">BigQuery SQL · referral_promotion_churn.sql</span>
         <span class="code-block-chevron">▾ show query</span>
       </div>
       <div class="code-block-body">
-        <pre><span class="code-kw">WITH</span> sub <span class="code-kw">AS</span> (
-  <span class="code-kw">SELECT</span>
-    user_id,
-    first_subscription_date        <span class="code-kw">AS</span> start_subscription_date,
-    <span class="code-fn">MIN</span>(subscription_date)          <span class="code-kw">AS</span> first_filed_subscription_date,
-    <span class="code-fn">MAX</span>(subscription_date)          <span class="code-kw">AS</span> last_subscription_date,
-    <span class="code-fn">MAX</span>(referral)                   <span class="code-kw">AS</span> total_referrals,
-    <span class="code-fn">SUM</span>(promotion)                  <span class="code-kw">AS</span> total_promotions,
-    <span class="code-fn">MAX</span>(payment3x)                  <span class="code-kw">AS</span> ever_used_payment3x,
-    <span class="code-fn">COUNT</span>(<span class="code-kw">DISTINCT</span> <span class="code-fn">EXTRACT</span>(
-      <span class="code-kw">YEAR FROM</span> subscription_date))  <span class="code-kw">AS</span> total_renewals_raw,
-    country, region, department, city
-  <span class="code-kw">FROM</span> home_exchange.subscriptions
-  <span class="code-kw">GROUP BY</span>
-    user_id, first_subscription_date,
-    country, region, department, city
-)
+        <pre><span class="code-kw">SELECT</span>
+  ever_referred,
+  total_promotions > <span class="code-nu">0</span>                        <span class="code-kw">AS</span> had_promotion,
+  <span class="code-fn">COUNT</span>(*)                                   <span class="code-kw">AS</span> total_customers,
+  <span class="code-fn">ROUND</span>(<span class="code-fn">COUNTIF</span>(is_churned = <span class="code-nu">1</span>) * <span class="code-nu">100.0</span>
+    / <span class="code-fn">COUNT</span>(*), <span class="code-nu">1</span>)                          <span class="code-kw">AS</span> churn_rate_pct
+<span class="code-kw">FROM</span> `lewagon-457508`.home_exchange_reporting.v_customer_activity
+<span class="code-kw">GROUP BY</span> <span class="code-nu">1</span>, <span class="code-nu">2</span>
+<span class="code-kw">ORDER BY</span> <span class="code-nu">1</span>, <span class="code-nu">2</span></pre>
+      </div>
+    </div>
+  </section>
 
-<span class="code-kw">SELECT</span>
-  user_id,
-  start_subscription_date,
-  first_filed_subscription_date,
-  last_subscription_date,
-  total_referrals,
-  total_promotions,
-  ever_used_payment3x,
+  <!-- Findings -->
+  <section class="section fade-up">
+    <div class="section-label">Key findings</div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Promotion is the strongest lever</div>
+        <div class="finding-text">A promotional discount reduces churn by nearly 40 percentage points — the single biggest retention signal in the dataset</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Referral builds loyalty</div>
+        <div class="finding-text">Referred customers churn at 34.2% vs 46.8% baseline — word-of-mouth brings more committed members</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Combined effect is near-zero churn</div>
+        <div class="finding-text">Referred customers who also received a promotion churn at just 4.9% — but this group is small (349 customers)</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Scale the referral programme</div>
+        <div class="finding-text">Only 6,388 referred customers out of 70,726 total (9%). Growing this channel while adding promotional incentives could dramatically improve retention</div>
+      </div>
+    </div>
+  </section>
+    </div>
 
-  <span class="code-cm">-- Tenure: years as a member</span>
-  <span class="code-fn">DATE_DIFF</span>(
-    <span class="code-fn">DATE</span>(last_subscription_date),
-    <span class="code-fn">DATE</span>(start_subscription_date), <span class="code-kw">YEAR</span>
-  ) <span class="code-kw">AS</span> tenure_years,
+    <!-- 04 Geography -->
+    <div id="geography" class="chapter">
+      <div class="chapter-header">
+        <div class="chapter-num">04 — Geographic flows</div>
+        <div class="chapter-title">Where do members travel?</div>
+        <div class="chapter-desc">France dominates as both origin and destination. Every country's top exchange pair is domestic. Explore 70 countries and 568 origin-destination pairs interactively.</div>
+      </div>
+      <section class="section fade-up">
+    <div class="section-label">Interactive explorer</div>
+    <div class="explorer-wrap">
 
-  <span class="code-cm">-- Renewals: years active minus starting year</span>
-  <span class="code-fn">DATE_DIFF</span>(
-    <span class="code-fn">DATE</span>(last_subscription_date),
-    <span class="code-fn">DATE</span>(first_filed_subscription_date), <span class="code-kw">YEAR</span>
-  ) <span class="code-kw">AS</span> total_renewals,
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label">Country</div>
+          <select id="sel"></select>
+        </div>
+        <div class="control-group">
+          <div class="control-label">View</div>
+          <div class="toggle-wrap">
+            <button class="toggle-btn active" id="btnD" onclick="setMode('d')">Where they go ↗</button>
+            <button class="toggle-btn" id="btnO" onclick="setMode('o')">Who visits ↙</button>
+          </div>
+        </div>
+      </div>
 
-  <span class="code-cm">-- Churn flag: no renewal in past 13 months</span>
-  <span class="code-kw">CASE</span>
-    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(
-      <span class="code-fn">CURRENT_DATE</span>(),
-      <span class="code-fn">DATE</span>(last_subscription_date), <span class="code-kw">MONTH</span>
-    ) > <span class="code-nu">13</span> <span class="code-kw">THEN</span> <span class="code-nu">1</span>
-    <span class="code-kw">ELSE</span> <span class="code-nu">0</span>
-  <span class="code-kw">END AS</span> is_churned,
+      <div class="stat-row">
+        <div class="stat-cell"><div class="stat-lbl">Total exchanges</div><div class="stat-val" id="sTotal">—</div><div class="stat-sub" id="sSub">select a country</div></div>
+        <div class="stat-cell"><div class="stat-lbl" id="sTopLbl">Top destination</div><div class="stat-val" id="sTop">—</div><div class="stat-sub" id="sTopN"></div></div>
+        <div class="stat-cell"><div class="stat-lbl" id="sRchLbl">Countries reached</div><div class="stat-val" id="sRch">—</div><div class="stat-sub">unique countries</div></div>
+      </div>
 
-  <span class="code-cm">-- Tenure bucket for segmentation</span>
-  <span class="code-kw">CASE</span>
-    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(..., <span class="code-kw">YEAR</span>) = <span class="code-nu">0</span>
-      <span class="code-kw">THEN</span> <span class="code-st">'0 – New'</span>
-    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(..., <span class="code-kw">YEAR</span>) <span class="code-kw">BETWEEN</span> <span class="code-nu">1</span> <span class="code-kw">AND</span> <span class="code-nu">2</span>
-      <span class="code-kw">THEN</span> <span class="code-st">'1–2 years'</span>
-    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(..., <span class="code-kw">YEAR</span>) <span class="code-kw">BETWEEN</span> <span class="code-nu">3</span> <span class="code-kw">AND</span> <span class="code-nu">5</span>
-      <span class="code-kw">THEN</span> <span class="code-st">'3–5 years'</span>
-    <span class="code-kw">ELSE</span> <span class="code-st">'6+ years'</span>
-  <span class="code-kw">END AS</span> tenure_bucket,
+      <div class="map-wrap">
+        <div class="tip" id="tip"></div>
+        <svg id="map"></svg>
+      </div>
 
-  country, region, department, city
-<span class="code-kw">FROM</span> sub</pre>
+      <div class="chart-lbl" id="cTitle">Select a country to explore</div>
+      <div class="chart-sub">Top 10 · completed exchanges only · domestic excluded</div>
+      <canvas id="chart" style="max-height:200px"></canvas>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <div class="section-label">Key findings</div>
+    <div class="finding-grid">
+      <div class="finding-card"><div class="finding-title">France — platform hub</div><div class="finding-text">117,298 completed exchanges as destination — more than double Spain. Also the #1 origin with 66,757 domestic exchanges alone</div></div>
+      <div class="finding-card"><div class="finding-title">Spain — most visited internationally</div><div class="finding-text">53,421 exchanges as destination, visited by members from France, Italy, Netherlands, Germany, UK, Canada and more</div></div>
+      <div class="finding-card"><div class="finding-title">Domestic first everywhere</div><div class="finding-text">Every major country's top exchange pair is domestic — France→France, Spain→Spain, USA→USA. Home market trust precedes international exploration</div></div>
+      <div class="finding-card"><div class="finding-title">French overseas territories</div><div class="finding-text">Guadeloupe, Martinique, Réunion and French Polynesia all feature strongly — French members treating overseas territories as domestic travel</div></div>
+    </div>
+  </section>
+    </div>
+
+    <!-- 05 Covid -->
+    <div id="covid" class="chapter">
+      <div class="chapter-header">
+        <div class="chapter-num">05 — Covid impact</div>
+        <div class="chapter-title">How did Covid reshape travel behaviour?</div>
+        <div class="chapter-desc">Acquisition peaked at 17,153 in 2019 then collapsed. Domestic exchanges surged from 41% to 83.5%. By 2022 a new normal emerged — permanently more domestic than before.</div>
+      </div>
+      <!-- Key stats -->
+  <div class="stat-row fade-up">
+    <div class="stat">
+      <div class="stat-label">Peak acquisition (2019)</div>
+      <div class="stat-val amber">17,153</div>
+      <div class="stat-desc">new subscribers</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Peak domestic (May 2020)</div>
+      <div class="stat-val red">83.5%</div>
+      <div class="stat-desc">of all completed exchanges</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">2022 new normal</div>
+      <div class="stat-val green">48%</div>
+      <div class="stat-desc">domestic — permanently elevated</div>
+    </div>
+  </div>
+
+  <!-- Business context: growth charts -->
+  <section class="section fade-up">
+    <div class="section-label">Business context — subscriber growth</div>
+    <div class="content-block">
+      <h2>Acquisition collapsed — retention held the business together</h2>
+      <p>The platform grew steadily from 2005 to 2019, peaking at 17,153 new subscribers in 2019. When Covid hit, new acquisition dropped 42% to 9,898 in 2020 and fell further to 7,414 in 2021. Yet total subscriber numbers kept rising — because existing members stayed. During Covid, retention was the only growth engine.</p>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Total subscribers by year</div>
+      <div class="chart-sub">Cumulative active subscribers · 2005–2021 · by continent</div>
+      <canvas id="growthChart" style="max-height:240px;"></canvas>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">New customer acquisition by year</div>
+      <div class="chart-sub">New subscribers per year · 2005–2021 · by continent</div>
+      <canvas id="acquisitionChart" style="max-height:240px;"></canvas>
+    </div>
+
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">2019 — peak acquisition</div>
+        <div class="finding-text">17,153 new subscribers — the platform's best year. Europe led with 13K new members driven by strong organic growth</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">2020 — Covid shock</div>
+        <div class="finding-text">Acquisition dropped 42% to 9,898. Every continent fell sharply. Yet total subscribers still grew — existing members renewed</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">2021 — continued decline</div>
+        <div class="finding-text">Acquisition fell further to 7,414 — less than half of 2019's peak. New member confidence in travel had not yet recovered</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Retention saved the numbers</div>
+        <div class="finding-text">Total subscribers grew from 52K → 61K → 69K during 2019–2021 despite acquisition collapse — proof that retention held the business together</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Travel type chart -->
+  <section class="section fade-up">
+    <div class="section-label">Monthly travel type breakdown</div>
+    <div class="content-block">
+      <h2>How travel behaviour shifted month by month</h2>
+      <p>The monthly exchange data shows the precise moment lockdowns hit — and tracks the slow recovery toward pre-pandemic patterns.</p>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Exchange travel type — % of monthly completed exchanges</div>
+      <div class="chart-sub">Domestic · Continental · Intercontinental · Jan 2019 – Nov 2022</div>
+      <div class="annotation-row">
+        <span class="ann ann-covid">Mar 2020 — first lockdowns</span>
+        <span class="ann ann-covid">Feb 2021 — second wave peak (82.1% domestic)</span>
+        <span class="ann ann-recovery">Jun 2021 — first recovery signs</span>
+        <span class="ann ann-new">2022 — new normal ~48% domestic</span>
+      </div>
+      <canvas id="travelChart" style="max-height:160px;"></canvas>
+    </div>
+
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Lockdown impact — immediate</div>
+        <div class="finding-text">Domestic share jumped from 41% in Feb 2020 to 72% by April 2020 — within just 6 weeks of the first restrictions</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Intercontinental — near zero</div>
+        <div class="finding-text">Intercontinental exchanges collapsed to just 3.2% in June 2020 — from a pre-Covid baseline of ~24%</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Second wave — Feb 2021</div>
+        <div class="finding-text">Domestic peaked again at 82.1% in February 2021 as European countries re-entered lockdown</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Permanent behavioural shift</div>
+        <div class="finding-text">By end of 2022, domestic stabilised at ~48-50% — higher than the pre-Covid 40% baseline, suggesting lasting behaviour change</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stay length -->
+  <section class="section fade-up">
+    <div class="section-label">Stay length by travel type</div>
+    <div class="content-block">
+      <h2>The further you travel, the longer you stay</h2>
+      <p>Intercontinental exchanges average 7.8 nights — 44% longer than domestic stays at 5.4 nights. Members who travel long-haul justify the cost by staying longer. The top 10% of intercontinental exchanges last 15+ nights.</p>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Average and median nights by travel type</div>
+      <div class="chart-sub">Completed exchanges only · nights &gt; 0</div>
+      <canvas id="nightsChart" style="max-height:180px;"></canvas>
+    </div>
+
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Domestic — short breaks</div>
+        <div class="finding-text">Median 4 nights. Domestic exchanges are often weekend or short holiday trips — convenient and low-commitment</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Continental — week-long holidays</div>
+        <div class="finding-text">Median 6 nights. A full week away — the classic European holiday pattern</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Intercontinental — proper holidays</div>
+        <div class="finding-text">Median 6 nights but P90 of 15+ nights. Long-haul travellers commit to extended stays to justify the journey</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Covid compounded the loss</div>
+        <div class="finding-text">When intercontinental travel collapsed in 2020, the platform lost its longest stays — replaced by shorter domestic breaks</div>
+      </div>
+    </div>
+  </section>
+    </div>
+
+    <!-- 06 Recommendations -->
+    <div id="recommendations" class="chapter">
+      <div class="chapter-header">
+        <div class="chapter-num">06 — Recommendations</div>
+        <div class="chapter-title">From data to action</div>
+        <div class="chapter-desc">Six concrete recommendations tied directly to the findings — ordered by estimated retention impact.</div>
+      </div>
+      <section class="section fade-up">
+    <div class="section-label">Recommendations</div>
+
+    <!-- R1 -->
+    <div class="rec-card">
+      <div class="rec-number">01 — Highest priority</div>
+      <div class="rec-title">Drive new subscribers to their first completed exchange within 90 days</div>
+      <div class="rec-body">
+        New customers churn at 56.6% — the highest of any segment. The data shows that members who never complete an exchange churn at 67%, while those who complete even one drop to 47%. Getting a subscriber to their first successful exchange is the single most impactful retention action available.
+        <br><br>
+        Trigger a structured onboarding sequence: personalised home match suggestions at day 7, a first-exchange guide at day 14, and a direct re-engagement message at day 45 for members who have made no exchange requests.
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Evidence</span>
+        <span class="rec-evidence-text">Never requested: 67% churn · Requested never completed: 56.1% · High activity: 26.5% churn — a 40-point gap driven purely by exchange activity</span>
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Target</span>
+        <span class="rec-evidence-text">Reduce new customer churn from 56.6% → below 45% by increasing first-exchange completion rate within the subscription year</span>
+      </div>
+      <div class="rec-tags">
+        <span class="rec-tag product">Product</span>
+        <span class="rec-tag marketing">Marketing</span>
+        <span class="rec-tag retention">Retention</span>
       </div>
     </div>
 
-    <div class="content-block">
-      <h2>Why this approach</h2>
-      <ul>
-        <li><code>MAX(referral)</code> — if a user was ever referred, flag it regardless of which year</li>
-        <li><code>SUM(promotion)</code> — captures total promotions received across all subscriptions</li>
-        <li><code>DATE_DIFF(..., YEAR)</code> replaces a fragile <code>CASE WHEN EXTRACT(year) = 2021</code> fix — works correctly for all cohorts</li>
-        <li>13-month churn threshold accounts for annual billing + grace period</li>
-      </ul>
+    <!-- R2 -->
+    <div class="rec-card">
+      <div class="rec-number">02 — Highest impact per euro spent</div>
+      <div class="rec-title">Scale the promotional discount programme — it is the strongest retention lever in the dataset</div>
+      <div class="rec-body">
+        Subscribers who received a promotional discount churn at just 7.0% — compared to 46.8% for those who received no incentive. This is a 39.8-point reduction from a single intervention. The combined effect of referral and promotion produces 4.9% churn — effectively near-zero attrition.
+        <br><br>
+        Currently only 1,889 subscribers received a promotion with no referral, and 349 received both. These numbers are far too small relative to the 70,000+ subscriber base. A targeted promotion strategy — especially at renewal time — would have outsized impact.
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Evidence</span>
+        <span class="rec-evidence-text">No referral, no promo: 46.8% churn · Promotion only: 7.0% · Referral + promo: 4.9% — the largest single churn reduction in the entire analysis</span>
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Target</span>
+        <span class="rec-evidence-text">Offer a targeted renewal discount to at-risk subscribers (low activity, approaching renewal with zero recent exchanges) and measure 12-month retention lift</span>
+      </div>
+      <div class="rec-tags">
+        <span class="rec-tag marketing">Marketing</span>
+        <span class="rec-tag retention">Retention</span>
+      </div>
     </div>
+
+    <!-- R3 -->
+    <div class="rec-card">
+      <div class="rec-number">03</div>
+      <div class="rec-title">Invest in growing the referral programme — referred members churn 12 points less</div>
+      <div class="rec-body">
+        Referred subscribers churn at 34.2% vs 46.8% for organic subscribers — a 12.6-point improvement without any promotional cost. Yet only 6,388 out of 70,726 subscribers (9%) were referred. The referral channel is dramatically underutilised.
+        <br><br>
+        Introduce a structured member referral programme with incentives for both the referrer and the new member. Members who have completed 3+ exchanges are the ideal referrers — they are the most engaged and have the most to say about the platform's value.
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Evidence</span>
+        <span class="rec-evidence-text">Referral churn: 34.2% vs baseline 46.8% · Only 9% of subscribers were referred · Referral + promo achieves lowest churn (4.9%) in entire dataset</span>
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Target</span>
+        <span class="rec-evidence-text">Grow referred subscriber share from 9% → 20% within 2 years. Each percentage point shift represents ~700 additional low-churn subscribers</span>
+      </div>
+      <div class="rec-tags">
+        <span class="rec-tag growth">Growth</span>
+        <span class="rec-tag marketing">Marketing</span>
+        <span class="rec-tag retention">Retention</span>
+      </div>
+    </div>
+
+    <!-- R4 -->
+    <div class="rec-card">
+      <div class="rec-number">04</div>
+      <div class="rec-title">Trigger a second-home listing prompt after the first completed exchange</div>
+      <div class="rec-body">
+        Users who list multiple homes are dramatically more engaged on both sides of the platform. 3+ home users complete 7.7 exchanges as guests and 7.7 as hosts — perfect symmetry, and 2.4x more than single-home users. They also churn 6 points less.
+        <br><br>
+        Critically, 60% of 3+ home hosts are paying subscribers, vs only 14.5% of single-home hosts — listing a second home is the strongest conversion signal in the data. After a member's first successful exchange, prompt them to add their second property if they have one. This single action could dramatically improve both engagement and subscription conversion among casual hosts.
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Evidence</span>
+        <span class="rec-evidence-text">1 home: 44.6% churn, 3.2 avg exchanges · 3+ homes: 38.6% churn, 7.7 avg exchanges · 60% of multi-home hosts are subscribers vs 14.5% single-home</span>
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Target</span>
+        <span class="rec-evidence-text">Increase multi-home listing rate among subscribers. Test a post-exchange prompt and measure second-home listing rate and 6-month retention vs control group</span>
+      </div>
+      <div class="rec-tags">
+        <span class="rec-tag product">Product</span>
+        <span class="rec-tag retention">Retention</span>
+        <span class="rec-tag growth">Growth</span>
+      </div>
+    </div>
+
+    <!-- R5 -->
+    <div class="rec-card">
+      <div class="rec-number">05</div>
+      <div class="rec-title">Prioritise geographic expansion only where local exchange density is sufficient</div>
+      <div class="rec-body">
+        Asia and South America churn at 52–53% — roughly 10 points above Europe and North America. The most likely cause is insufficient local community density: members in these markets cannot find enough nearby exchange partners, reducing platform value before they've had a chance to experience it.
+        <br><br>
+        Geographic expansion should follow a community-first model: build local listing density in a target city or region before marketing subscriptions. A minimum viable density threshold — for example 500 active listings within a metropolitan area — should be reached before subscription campaigns are activated.
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Evidence</span>
+        <span class="rec-evidence-text">Asia: 53.2% churn (680 subscribers) · South America: 52.4% (1,005) · Europe: 43.8% (46,428) · North America: 43.3% (17,074)</span>
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Target</span>
+        <span class="rec-evidence-text">Define a minimum listing density threshold for new market activation. Measure churn in pilot cities at launch vs 12 months after density threshold is reached</span>
+      </div>
+      <div class="rec-tags">
+        <span class="rec-tag growth">Growth</span>
+        <span class="rec-tag product">Product</span>
+      </div>
+    </div>
+
+    <!-- R6 -->
+    <div class="rec-card">
+      <div class="rec-number">06</div>
+      <div class="rec-title">Use Covid recovery data to plan seasonal and intercontinental campaigns</div>
+      <div class="rec-body">
+        Domestic exchanges peaked at 83.5% during Covid restrictions and have since stabilised at ~48% — permanently above the pre-Covid 40% baseline. Intercontinental travel, which generates the longest stays (avg 7.8 nights vs 5.4 domestic), has partially recovered but remains below 2019 levels.
+        <br><br>
+        Two opportunities: first, develop domestic exchange campaigns targeted at members who have only ever exchanged locally — they are the most likely to try continental or intercontinental exchanges as confidence returns. Second, intercontinental exchanges are the highest-value stays — a targeted campaign highlighting long-stay international options could reactivate members who have been dormant since 2020.
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Evidence</span>
+        <span class="rec-evidence-text">Pre-Covid domestic: 40% · Covid peak: 83.5% · 2022 new normal: ~48% · Intercontinental avg nights: 7.8 vs domestic 5.4 — 44% longer stays</span>
+      </div>
+      <div class="rec-evidence">
+        <span class="rec-evidence-label">Target</span>
+        <span class="rec-evidence-text">Grow intercontinental exchange share back toward pre-Covid 22-24% by 2024. Identify domestic-only members with 3+ exchanges as the prime intercontinental upsell audience</span>
+      </div>
+      <div class="rec-tags">
+        <span class="rec-tag marketing">Marketing</span>
+        <span class="rec-tag retention">Retention</span>
+      </div>
+    </div>
+
   </section>
 
-  <!-- Analysis pages -->
+  <!-- Summary -->
   <section class="section fade-up">
-    <div class="section-label">Analysis</div>
-    <div class="projects-grid">
-
-      <!-- 1. Who are our customers? -->
-      <a href="churn-segments/" class="project-card featured">
-        <div class="project-top">
-          <div>
-            <div class="project-title">Who are our customers — and do they stay?</div>
-            <div class="project-org mono">Churn by segment · activity · geography</div>
-          </div>
-          <span class="project-arrow">↗</span>
-        </div>
-        <p class="project-desc">
-          Three customer segments with very different retention profiles. New customers churn at 56.6%. The year 1 → 2 inflection is the sharpest in the lifecycle. Activity is the strongest predictor of renewal — high activity users churn at just 26.5%.
-        </p>
-        <div class="chip-row">
-          <span class="chip chip-sql">SQL</span>
-          <span class="chip chip-bq">BigQuery</span>
-          <span class="chip chip-default">Churn Modelling</span>
-          <span class="chip chip-default">Segmentation</span>
-        </div>
-      </a>
-
-      <!-- 2. How engaged are they? -->
-      <a href="activity-metrics/" class="project-card">
-        <div class="project-top">
-          <div>
-            <div class="project-title">How engaged are our members?</div>
-            <div class="project-org mono">Exchanges · nights · multi-home users</div>
-          </div>
-          <span class="project-arrow">↗</span>
-        </div>
-        <p class="project-desc">
-          Second Year customers are the most active. Only ~5% of requests become completed exchanges. Multi-home users exchange 2.4x more and show perfect symmetry between guest and host activity — 7.7 exchanges on each side.
-        </p>
-        <div class="chip-row">
-          <span class="chip chip-sql">SQL</span>
-          <span class="chip chip-default">Behavioural Analysis</span>
-          <span class="chip chip-default">Segmentation</span>
-        </div>
-      </a>
-
-      <!-- 3. What makes them stay? -->
-      <a href="referral-promotion/" class="project-card">
-        <div class="project-top">
-          <div>
-            <div class="project-title">What makes members stay?</div>
-            <div class="project-org mono">Strongest retention signal in the dataset</div>
-          </div>
-          <span class="project-arrow">↗</span>
-        </div>
-        <p class="project-desc">
-          Promotions reduce churn from 46.8% to just 7%. Referral alone cuts it to 34.2%. Combined, they produce 4.9% churn — the lowest in the entire dataset. These are the clearest, most actionable levers in the analysis.
-        </p>
-        <div class="chip-row">
-          <span class="chip chip-sql">SQL</span>
-          <span class="chip chip-default">Retention</span>
-          <span class="chip chip-default">Marketing</span>
-        </div>
-      </a>
-
-      <!-- 4. Where do they go? -->
-      <a href="geo-explorer/" class="project-card">
-        <div class="project-top">
-          <div>
-            <div class="project-title">Where do members travel?</div>
-            <div class="project-org mono">Interactive origin · destination map</div>
-          </div>
-          <span class="project-arrow">↗</span>
-        </div>
-        <p class="project-desc">
-          France dominates as both origin and destination — 117,298 exchanges as destination, more than double Spain. Every country's top pair is domestic. Interactive map across 70 countries and 568 origin-destination pairs.
-        </p>
-        <div class="chip-row">
-          <span class="chip chip-sql">SQL</span>
-          <span class="chip chip-bq">BigQuery</span>
-          <span class="chip chip-default">D3.js</span>
-          <span class="chip chip-default">Geographic Analysis</span>
-        </div>
-      </a>
-
-      <!-- 5. Covid impact -->
-      <a href="covid-travel/" class="project-card">
-        <div class="project-top">
-          <div>
-            <div class="project-title">How did Covid reshape travel behaviour?</div>
-            <div class="project-org mono">Monthly breakdown · 2019–2022</div>
-          </div>
-          <span class="project-arrow">↗</span>
-        </div>
-        <p class="project-desc">
-          Domestic exchanges surged from 41% to 83.5% in May 2020. Intercontinental collapsed to 3.2%. By 2022, domestic settled at ~48% — permanently above pre-Covid levels. Intercontinental users also stay longest: avg 7.8 nights vs 5.4 domestic.
-        </p>
-        <div class="chip-row">
-          <span class="chip chip-sql">SQL</span>
-          <span class="chip chip-bq">BigQuery</span>
-          <span class="chip chip-default">Travel Behaviour</span>
-          <span class="chip chip-default">Covid Analysis</span>
-        </div>
-      </a>
-
-      <!-- 6. Recommendations -->
-      <a href="recommendations/" class="project-card" style="border-left: 3px solid #1D9E75;">
-        <div class="project-top">
-          <div>
-            <div class="project-title">Recommendations</div>
-            <div class="project-org mono">Actionable steps from the full analysis</div>
-          </div>
-          <span class="project-arrow">↗</span>
-        </div>
-        <p class="project-desc">
-          Six concrete recommendations tied directly to the data — from onboarding campaigns to referral scaling, geographic expansion strategy, and multi-home conversion triggers.
-        </p>
-        <div class="chip-row">
-          <span class="chip chip-default">Strategy</span>
-          <span class="chip chip-default">Retention</span>
-          <span class="chip chip-default">Marketing</span>
-          <span class="chip chip-default">Product</span>
-        </div>
-      </a>
-
+    <div class="section-label">Summary</div>
+    <div class="content-block">
+      <h2>Priority matrix</h2>
+      <p>Ordered by estimated retention impact based on the data. The first three recommendations address the largest churn drivers; the remaining three are growth and expansion opportunities.</p>
     </div>
-    <p style="font-size:13px;color:var(--text-tertiary);font-family:'DM Mono',monospace;margin-top:1rem;">Analysis ongoing — new findings added as the project develops.</p>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'DM Mono',monospace;">
+        <thead>
+          <tr style="border-bottom:1px solid #e8e6e0;">
+            <th style="text-align:left;padding:10px 8px;color:#9c9a94;font-weight:400;">#</th>
+            <th style="text-align:left;padding:10px 8px;color:#9c9a94;font-weight:400;">Recommendation</th>
+            <th style="text-align:left;padding:10px 8px;color:#9c9a94;font-weight:400;">Owner</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Churn baseline</th>
+            <th style="text-align:right;padding:10px 8px;color:#9c9a94;font-weight:400;">Target</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:0.5px solid #e8e6e0;">
+            <td style="padding:10px 8px;color:#9c9a94;">01</td>
+            <td style="padding:10px 8px;font-weight:500;">First exchange in 90 days</td>
+            <td style="padding:10px 8px;color:#9c9a94;">Product · CRM</td>
+            <td style="text-align:right;padding:10px 8px;color:#a32d2d;">56.6%</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;">&lt;45%</td>
+          </tr>
+          <tr style="border-bottom:0.5px solid #e8e6e0;background:#f5f3ef;">
+            <td style="padding:10px 8px;color:#9c9a94;">02</td>
+            <td style="padding:10px 8px;font-weight:500;">Scale promotional discounts</td>
+            <td style="padding:10px 8px;color:#9c9a94;">Marketing</td>
+            <td style="text-align:right;padding:10px 8px;color:#a32d2d;">46.8%</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;">~7%</td>
+          </tr>
+          <tr style="border-bottom:0.5px solid #e8e6e0;">
+            <td style="padding:10px 8px;color:#9c9a94;">03</td>
+            <td style="padding:10px 8px;font-weight:500;">Grow referral programme</td>
+            <td style="padding:10px 8px;color:#9c9a94;">Growth · Marketing</td>
+            <td style="text-align:right;padding:10px 8px;color:#a32d2d;">46.8%</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;">~34%</td>
+          </tr>
+          <tr style="border-bottom:0.5px solid #e8e6e0;background:#f5f3ef;">
+            <td style="padding:10px 8px;color:#9c9a94;">04</td>
+            <td style="padding:10px 8px;font-weight:500;">Second-home listing prompt</td>
+            <td style="padding:10px 8px;color:#9c9a94;">Product</td>
+            <td style="text-align:right;padding:10px 8px;color:#a32d2d;">44.6%</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;">~39%</td>
+          </tr>
+          <tr style="border-bottom:0.5px solid #e8e6e0;">
+            <td style="padding:10px 8px;color:#9c9a94;">05</td>
+            <td style="padding:10px 8px;font-weight:500;">Density-first expansion</td>
+            <td style="padding:10px 8px;color:#9c9a94;">Growth · Strategy</td>
+            <td style="text-align:right;padding:10px 8px;color:#a32d2d;">~53%</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;">~44%</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 8px;color:#9c9a94;">06</td>
+            <td style="padding:10px 8px;font-weight:500;">Intercontinental reactivation</td>
+            <td style="padding:10px 8px;color:#9c9a94;">Marketing</td>
+            <td style="text-align:right;padding:10px 8px;color:#9c9a94;">~18% share</td>
+            <td style="text-align:right;padding:10px 8px;color:#1a5c1a;">~22% share</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
+    </div>
 
+  </main>
 </div>
 
 <footer>
   <div class="footer-inner">
     <div class="contact-links">
-      <a href="mailto:imre.tamas@gmail.com" class="contact-link">
-        <span class="contact-dot"></span> imre.tamas@gmail.com
-      </a>
-      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank" rel="noopener">
-        <span class="contact-dot"></span> LinkedIn
-      </a>
-      <a href="https://github.com/imrepocok" class="contact-link" target="_blank" rel="noopener">
-        <span class="contact-dot"></span> GitHub
-      </a>
+      <a href="mailto:imre.tamas@gmail.com" class="contact-link"><span class="contact-dot"></span> imre.tamas@gmail.com</a>
+      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank"><span class="contact-dot"></span> LinkedIn</a>
+      <a href="https://github.com/imrepocok" class="contact-link" target="_blank"><span class="contact-dot"></span> GitHub</a>
     </div>
     <span class="footer-copy mono">Berlin, Germany</span>
   </div>
 </footer>
 
+<script>
+
+const ctx = document.getElementById('churnChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: ['New Customer', 'Second Year Customer', 'High Value Customer'],
+    datasets: [
+      {
+        label: 'Churned %',
+        data: [56.6, 38.5, 40.8],
+        backgroundColor: ['#D3D1C7', '#D3D1C7', '#D3D1C7'],
+        borderColor:     ['#888780', '#888780', '#888780'],
+        borderWidth: 1,
+        borderRadius: 4
+      },
+      {
+        label: 'Retained %',
+        data: [43.4, 61.5, 59.2],
+        backgroundColor: ['#B5D4F4', '#B5D4F4', '#B5D4F4'],
+        borderColor:     ['#185FA5', '#185FA5', '#185FA5'],
+        borderWidth: 1,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          font: { family: "'DM Mono', monospace", size: 11 },
+          padding: 16,
+          boxWidth: 24
+        }
+      },
+      tooltip: {
+        backgroundColor: '#1a1916',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont:  { family: "'DM Mono', monospace", size: 11 },
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' },
+        grid: { display: false }
+      },
+      y: {
+        min: 0, max: 100,
+        ticks: {
+          font: { family: "'DM Mono', monospace", size: 11 },
+          color: '#9c9a94',
+          callback: v => v + '%'
+        },
+        grid: { color: '#f0ede8' }
+      }
+    }
+  }
+});
+
+new Chart(document.getElementById('activityChurnChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Never\nRequested', 'Requested\nNever Completed', 'Low\nActivity', 'Medium\nActivity', 'High\nActivity'],
+    datasets: [{
+      data: [67.0, 56.1, 47.3, 36.5, 26.5],
+      backgroundColor: ['#f09595','#fac775','#fac775','#9FE1CB','#9FE1CB'],
+      borderColor:     ['#E24B4A','#BA7517','#BA7517','#1D9E75','#1D9E75'],
+      borderWidth: 1, borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#1a1916', titleFont: { family: "'DM Mono',monospace", size: 11 }, bodyFont: { family: "'DM Mono',monospace", size: 11 }, callbacks: { label: ctx => ` Churn rate: ${ctx.parsed.y.toFixed(1)}%` } }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono',monospace", size: 10 }, color: '#9c9a94' }, grid: { display: false } },
+      y: { min: 0, max: 80, ticks: { font: { family: "'DM Mono',monospace", size: 11 }, color: '#9c9a94', callback: v => v + '%' }, grid: { color: '#f0ede8' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('continentChurnChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Asia', 'South\nAmerica', 'Oceania', 'Europe', 'North\nAmerica', 'Africa'],
+    datasets: [{
+      data: [53.2, 52.4, 50.1, 43.8, 43.3, 42.6],
+      backgroundColor: ['#fac775','#fac775','#fac775','#9FE1CB','#9FE1CB','#9FE1CB'],
+      borderColor:     ['#BA7517','#BA7517','#BA7517','#1D9E75','#1D9E75','#1D9E75'],
+      borderWidth: 1, borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#1a1916', titleFont: { family: "'DM Mono',monospace", size: 11 }, bodyFont: { family: "'DM Mono',monospace", size: 11 }, callbacks: { label: ctx => ` Churn rate: ${ctx.parsed.y.toFixed(1)}%` } }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono',monospace", size: 10 }, color: '#9c9a94' }, grid: { display: false } },
+      y: { min: 0, max: 65, ticks: { font: { family: "'DM Mono',monospace", size: 11 }, color: '#9c9a94', callback: v => v + '%' }, grid: { color: '#f0ede8' } }
+    }
+  }
+});
+
+
+document.querySelectorAll('.code-block-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const open = btn.parentElement.classList.contains('open');
+    btn.querySelector('.code-block-chevron').textContent = open ? '▾ show query' : '▴ hide query';
+  });
+});
+
+
+const segments = ['New Customer', 'Second Year Customer', 'High Value Customer'];
+const colors = { border: ['#E24B4A','#1D9E75','#185FA5'], bg: ['#f09595','#9FE1CB','#85B7EB'] };
+
+new Chart(document.getElementById('exchangesChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: segments,
+    datasets: [{
+      label: 'Avg completed exchanges (active users)',
+      data: [3.87, 5.84, 5.06],
+      backgroundColor: colors.bg,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1a1916',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont:  { family: "'DM Mono', monospace", size: 11 },
+        callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(2)} exchanges` }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { display: false } },
+      y: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { color: '#f0ede8' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('neverChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: segments,
+    datasets: [{
+      label: '% never completed an exchange',
+      data: [26.6, 24.4, 31.6],
+      backgroundColor: ['#fac775','#fac775','#f09595'],
+      borderColor: ['#BA7517','#BA7517','#E24B4A'],
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1a1916',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont:  { family: "'DM Mono', monospace", size: 11 },
+        callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(1)}% never completed` }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { display: false } },
+      y: {
+        min: 0, max: 50,
+        ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94', callback: v => v + '%' },
+        grid: { color: '#f0ede8' }
+      }
+    }
+  }
+});
+
+new Chart(document.getElementById('homesChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['1 home', '2 homes', '3+ homes'],
+    datasets: [
+      {
+        label: 'Avg exchanges as guest',
+        data: [3.2, 5.0, 7.7],
+        backgroundColor: '#B5D4F4',
+        borderColor: '#185FA5',
+        borderWidth: 1,
+        borderRadius: 4
+      },
+      {
+        label: 'Avg exchanges as host',
+        data: [2.8, 4.9, 7.7],
+        backgroundColor: '#9FE1CB',
+        borderColor: '#1D9E75',
+        borderWidth: 1,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { font: { family: "'DM Mono', monospace", size: 11 }, padding: 16, boxWidth: 24 }
+      },
+      tooltip: {
+        backgroundColor: '#1a1916',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont:  { family: "'DM Mono', monospace", size: 11 },
+        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} exchanges` }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { display: false } },
+      y: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { color: '#f0ede8' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('nightsHomesChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['1 home', '2 homes', '3+ homes'],
+    datasets: [
+      {
+        label: 'Avg nights as guest',
+        data: [20.1, 29.9, 44.6],
+        backgroundColor: '#B5D4F4',
+        borderColor: '#185FA5',
+        borderWidth: 1,
+        borderRadius: 4
+      },
+      {
+        label: 'Avg nights as host',
+        data: [18.2, 28.9, 43.5],
+        backgroundColor: '#9FE1CB',
+        borderColor: '#1D9E75',
+        borderWidth: 1,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { font: { family: "'DM Mono', monospace", size: 11 }, padding: 16, boxWidth: 24 }
+      },
+      tooltip: {
+        backgroundColor: '#1a1916',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont:  { family: "'DM Mono', monospace", size: 11 },
+        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} nights` }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { display: false } },
+      y: { ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94' }, grid: { color: '#f0ede8' } }
+    }
+  }
+});
+
+
+document.querySelectorAll('.code-block-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const open = btn.parentElement.classList.contains('open');
+    btn.querySelector('.code-block-chevron').textContent = open ? '▾ show query' : '▴ hide query';
+  });
+});
+
+
+const labels = ['No referral\nNo promotion', 'No referral\nWith promotion', 'Referral\nNo promotion', 'Referral +\nPromotion'];
+const churnData = [46.8, 7.0, 34.2, 4.9];
+const bgColors = ['#f09595', '#9FE1CB', '#fac775', '#9FE1CB'];
+const borderColors = ['#E24B4A', '#1D9E75', '#BA7517', '#1D9E75'];
+
+new Chart(document.getElementById('promoChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['No ref · No promo', 'No ref · With promo', 'Referral · No promo', 'Referral + Promo'],
+    datasets: [{
+      label: 'Churn rate %',
+      data: churnData,
+      backgroundColor: bgColors,
+      borderColor: borderColors,
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1a1916',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont:  { family: "'DM Mono', monospace", size: 11 },
+        callbacks: { label: ctx => ` Churn rate: ${ctx.parsed.y.toFixed(1)}%` }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#9c9a94' }, grid: { display: false } },
+      y: {
+        min: 0, max: 60,
+        ticks: { font: { family: "'DM Mono', monospace", size: 11 }, color: '#9c9a94', callback: v => v + '%' },
+        grid: { color: '#f0ede8' }
+      }
+    }
+  }
+});
+
+
+document.querySelectorAll('.code-block-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const open = btn.parentElement.classList.contains('open');
+    btn.querySelector('.code-block-chevron').textContent = open ? '▾ show query' : '▴ hide query';
+  });
+});
+
+
+const years = ['2005','2006','2007','2008','2009','2010','2011','2012','2013','2014','2015','2016','2017','2018','2019','2020','2021'];
+
+const CC = {
+  'Europe':        { bg:'#B5D4F4', border:'#185FA5' },
+  'North America': { bg:'#9FE1CB', border:'#0F6E56' },
+  'Oceania':       { bg:'#fac775', border:'#854F0B' },
+  'Asia':          { bg:'#AFA9EC', border:'#3C3489' },
+  'South America': { bg:'#F0997B', border:'#712B13' },
+  'Africa':        { bg:'#D3D1C7', border:'#5F5E5A' }
+};
+
+const C1 = {
+  'Africa':        [3,5,9,16,21,27,33,54,65,96,120,150,187,279,490,584,614],
+  'Asia':          [7,3,11,24,27,54,87,94,133,156,205,245,309,414,603,631,589],
+  'Europe':        [207,355,613,935,1447,2397,3515,4835,6358,8278,10308,12525,15213,21022,34040,41592,47035],
+  'North America': [320,497,722,964,1334,1987,2606,3256,3914,4930,5852,6994,8495,10698,13772,15600,17242],
+  'Oceania':       [52,84,115,139,182,268,352,449,529,656,819,1022,1227,1539,1917,2096,2164],
+  'South America': [6,7,13,18,31,46,57,78,114,156,190,257,307,444,756,902,1015]
+};
+
+const C2 = {
+  'Africa':        [2,2,4,7,6,9,9,17,15,27,30,27,37,95,208,100,67],
+  'Asia':          [6,2,6,10,9,27,30,24,31,37,40,47,63,99,173,55,25],
+  'Europe':        [67,149,252,337,507,943,1117,1322,1526,1927,2029,2217,2694,5795,13032,7561,5449],
+  'North America': [106,180,224,243,379,646,624,649,671,1004,936,1177,1472,2212,3067,1853,1686],
+  'Oceania':       [16,32,31,25,43,85,88,93,80,131,164,202,208,312,374,183,74],
+  'South America': [5,1,6,6,13,15,16,19,34,44,35,62,65,135,299,146,113]
+};
+
+function mkDS(data) {
+  return Object.entries(data).map(([k,v]) => ({
+    label: k, data: v,
+    backgroundColor: CC[k].bg, borderColor: CC[k].border,
+    borderWidth: 0.5, borderRadius: 2
+  }));
+}
+
+const stackOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: {
+    legend: { position:'top', labels:{ font:{family:"'DM Mono',monospace",size:10}, padding:12, boxWidth:12 } },
+    tooltip: { backgroundColor:'#1a1916', titleFont:{family:"'DM Mono',monospace",size:11}, bodyFont:{family:"'DM Mono',monospace",size:11},
+      callbacks:{ label: c => ` ${c.dataset.label}: ${c.parsed.y.toLocaleString()}` } }
+  },
+  scales: {
+    x: { stacked:true, ticks:{font:{family:"'DM Mono',monospace",size:10},color:'#9c9a94'}, grid:{display:false} },
+    y: { stacked:true, ticks:{font:{family:"'DM Mono',monospace",size:10},color:'#9c9a94', callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v}, grid:{color:'#f0ede8'} }
+  }
+};
+
+new Chart(document.getElementById('growthChart').getContext('2d'), { type:'bar', data:{labels:years,datasets:mkDS(C1)}, options:stackOpts });
+new Chart(document.getElementById('acquisitionChart').getContext('2d'), { type:'bar', data:{labels:years,datasets:mkDS(C2)}, options:stackOpts });
+
+const data = [
+  {m:"2019-01",D:29.6,C:41.5,I:28.9},{m:"2019-02",D:34.5,C:41.9,I:23.6},
+  {m:"2019-03",D:33.4,C:42.0,I:24.6},{m:"2019-04",D:36.9,C:38.7,I:24.4},
+  {m:"2019-05",D:37.5,C:38.3,I:24.3},{m:"2019-06",D:36.4,C:38.1,I:25.6},
+  {m:"2019-07",D:41.3,C:34.7,I:24.0},{m:"2019-08",D:41.5,C:34.7,I:23.8},
+  {m:"2019-09",D:48.6,C:31.5,I:20.0},{m:"2019-10",D:48.1,C:32.4,I:19.5},
+  {m:"2019-11",D:47.4,C:31.8,I:20.8},{m:"2019-12",D:49.4,C:30.4,I:20.2},
+  {m:"2020-01",D:52.6,C:31.1,I:16.3},{m:"2020-02",D:58.7,C:26.3,I:15.0},
+  {m:"2020-03",D:60.2,C:20.1,I:19.7},{m:"2020-04",D:72.4,C:11.7,I:15.9},
+  {m:"2020-05",D:83.5,C:12.7,I:3.8},{m:"2020-06",D:71.1,C:25.7,I:3.2},
+  {m:"2020-07",D:72.0,C:23.4,I:4.7},{m:"2020-08",D:74.5,C:20.0,I:5.4},
+  {m:"2020-09",D:78.5,C:15.5,I:5.9},{m:"2020-10",D:80.2,C:12.8,I:7.0},
+  {m:"2020-11",D:75.0,C:13.7,I:11.3},{m:"2020-12",D:75.8,C:14.3,I:9.9},
+  {m:"2021-01",D:75.4,C:16.9,I:7.6},{m:"2021-02",D:82.1,C:13.2,I:4.7},
+  {m:"2021-03",D:78.1,C:15.6,I:6.4},{m:"2021-04",D:73.2,C:20.4,I:6.3},
+  {m:"2021-05",D:66.5,C:26.2,I:7.3},{m:"2021-06",D:60.0,C:30.8,I:9.2},
+  {m:"2021-07",D:61.7,C:28.7,I:9.7},{m:"2021-08",D:60.4,C:28.7,I:11.0},
+  {m:"2021-09",D:57.6,C:29.1,I:13.3},{m:"2021-10",D:55.7,C:29.1,I:15.2},
+  {m:"2021-11",D:53.6,C:27.5,I:18.9},{m:"2021-12",D:56.9,C:28.2,I:15.0},
+  {m:"2022-01",D:50.4,C:33.4,I:16.2},{m:"2022-02",D:47.4,C:35.0,I:17.6},
+  {m:"2022-03",D:48.2,C:34.3,I:17.6},{m:"2022-04",D:47.2,C:34.3,I:18.5},
+  {m:"2022-05",D:46.4,C:36.1,I:17.5},{m:"2022-06",D:46.3,C:35.6,I:18.1},
+  {m:"2022-07",D:46.8,C:33.7,I:19.5},{m:"2022-08",D:47.0,C:32.4,I:20.6},
+  {m:"2022-09",D:50.4,C:31.0,I:18.6},{m:"2022-10",D:50.8,C:30.2,I:19.0},
+  {m:"2022-11",D:50.6,C:30.4,I:19.0}
+];
+
+const labels = data.map(d => d.m);
+new Chart(document.getElementById('travelChart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      { label:'Domestic', data:data.map(d=>d.D), borderColor:'#1a1916', backgroundColor:'rgba(26,25,22,0.06)', borderWidth:2, pointRadius:2, tension:0.3, fill:false },
+      { label:'Continental', data:data.map(d=>d.C), borderColor:'#185FA5', backgroundColor:'rgba(24,95,165,0.06)', borderWidth:2, pointRadius:2, tension:0.3, fill:false },
+      { label:'Intercontinental', data:data.map(d=>d.I), borderColor:'#854F0B', backgroundColor:'rgba(133,79,11,0.06)', borderWidth:2, pointRadius:2, tension:0.3, fill:false }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{ mode:'index', intersect:false },
+    plugins: {
+      legend:{ position:'bottom', labels:{ font:{family:"'DM Mono',monospace",size:11}, padding:16, boxWidth:24 } },
+      tooltip:{ backgroundColor:'#1a1916', titleFont:{family:"'DM Mono',monospace",size:11}, bodyFont:{family:"'DM Mono',monospace",size:11}, callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`} }
+    },
+    scales: {
+      x:{ ticks:{font:{family:"'DM Mono',monospace",size:10},maxRotation:45,color:'#9c9a94',callback:function(val,idx){const m=labels[idx];return m.endsWith('-01')?m.slice(0,4):''}}, grid:{color:'#f0ede8'} },
+      y:{ min:0, max:100, ticks:{font:{family:"'DM Mono',monospace",size:10},color:'#9c9a94',callback:v=>v+'%'}, grid:{color:'#f0ede8'} }
+    }
+  }
+});
+
+new Chart(document.getElementById('nightsChart').getContext('2d'), {
+  type:'bar',
+  data:{ labels:['Domestic','Continental','Intercontinental'], datasets:[
+    { label:'Average nights', data:[5.4,6.8,7.8], backgroundColor:['#D3D1C7','#B5D4F4','#85B7EB'], borderColor:['#888780','#378ADD','#185FA5'], borderWidth:1, borderRadius:4 },
+    { label:'Median nights',  data:[4,6,6],         backgroundColor:['#f0ede8','#e6f1fb','#b5d4f4'], borderColor:['#888780','#378ADD','#185FA5'], borderWidth:1, borderRadius:4 }
+  ]},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'bottom',labels:{font:{family:"'DM Mono',monospace",size:11},padding:16,boxWidth:24}}, tooltip:{backgroundColor:'#1a1916',titleFont:{family:"'DM Mono',monospace",size:11},bodyFont:{family:"'DM Mono',monospace",size:11},callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y} nights`}} },
+    scales:{ x:{ticks:{font:{family:"'DM Mono',monospace",size:11},color:'#9c9a94'},grid:{display:false}}, y:{min:0,max:10,ticks:{font:{family:"'DM Mono',monospace",size:11},color:'#9c9a94',callback:v=>v+'n'},grid:{color:'#f0ede8'}} }
+  }
+});
+
+
+const RAW=[{"oc":"FRA","on":"France","dc":"FRA","dn":"France","n":66757},{"oc":"ESP","on":"Spain","dc":"ESP","dn":"Spain","n":24980},{"oc":"USA","on":"United States","dc":"USA","dn":"United States","n":21977},{"oc":"FRA","on":"France","dc":"ESP","dn":"Spain","n":6995},{"oc":"ESP","on":"Spain","dc":"FRA","dn":"France","n":6003},{"oc":"CAN","on":"Canada","dc":"CAN","dn":"Canada","n":5342},{"oc":"ITA","on":"Italy","dc":"ITA","dn":"Italy","n":4889},{"oc":"FRA","on":"France","dc":"ITA","dn":"Italy","n":3067},{"oc":"FRA","on":"France","dc":"USA","dn":"United States","n":2151},{"oc":"NLD","on":"Netherlands","dc":"NLD","dn":"Netherlands","n":2052},{"oc":"AUS","on":"Australia","dc":"AUS","dn":"Australia","n":2048},{"oc":"ITA","on":"Italy","dc":"FRA","dn":"France","n":1874},{"oc":"NLD","on":"Netherlands","dc":"FRA","dn":"France","n":1736},{"oc":"DEU","on":"Germany","dc":"DEU","dn":"Germany","n":1709},{"oc":"FRA","on":"France","dc":"CAN","dn":"Canada","n":1697},{"oc":"USA","on":"United States","dc":"FRA","dn":"France","n":1685},{"oc":"CAN","on":"Canada","dc":"USA","dn":"United States","n":1587},{"oc":"BEL","on":"Belgium","dc":"FRA","dn":"France","n":1559},{"oc":"ESP","on":"Spain","dc":"ITA","dn":"Italy","n":1499},{"oc":"DEU","on":"Germany","dc":"FRA","dn":"France","n":1321},{"oc":"FRA","on":"France","dc":"NLD","dn":"Netherlands","n":1319},{"oc":"GBR","on":"United Kingdom","dc":"GBR","dn":"United Kingdom","n":1295},{"oc":"FRA","on":"France","dc":"BEL","dn":"Belgium","n":1218},{"oc":"CAN","on":"Canada","dc":"FRA","dn":"France","n":1189},{"oc":"ITA","on":"Italy","dc":"ESP","dn":"Spain","n":1188},{"oc":"ESP","on":"Spain","dc":"USA","dn":"United States","n":1104},{"oc":"FRA","on":"France","dc":"DEU","dn":"Germany","n":1096},{"oc":"USA","on":"United States","dc":"ESP","dn":"Spain","n":1032},{"oc":"BEL","on":"Belgium","dc":"BEL","dn":"Belgium","n":991},{"oc":"USA","on":"United States","dc":"CAN","dn":"Canada","n":979},{"oc":"USA","on":"United States","dc":"MEX","dn":"Mexico","n":951},{"oc":"ESP","on":"Spain","dc":"DEU","dn":"Germany","n":915},{"oc":"FRA","on":"France","dc":"CHE","dn":"Switzerland","n":865},{"oc":"NLD","on":"Netherlands","dc":"ESP","dn":"Spain","n":865},{"oc":"CHE","on":"Switzerland","dc":"FRA","dn":"France","n":808},{"oc":"ESP","on":"Spain","dc":"PRT","dn":"Portugal","n":789},{"oc":"FRA","on":"France","dc":"GBR","dn":"United Kingdom","n":782},{"oc":"GBR","on":"United Kingdom","dc":"FRA","dn":"France","n":754},{"oc":"DEU","on":"Germany","dc":"ESP","dn":"Spain","n":730},{"oc":"IRL","on":"Ireland","dc":"IRL","dn":"Ireland","n":711},{"oc":"ESP","on":"Spain","dc":"NLD","dn":"Netherlands","n":698},{"oc":"MEX","on":"Mexico","dc":"USA","dn":"United States","n":685},{"oc":"FRA","on":"France","dc":"GLP","dn":"Guadeloupe","n":667},{"oc":"ESP","on":"Spain","dc":"GBR","dn":"United Kingdom","n":661},{"oc":"GLP","on":"Guadeloupe","dc":"FRA","dn":"France","n":630},{"oc":"USA","on":"United States","dc":"ITA","dn":"Italy","n":599},{"oc":"FRA","on":"France","dc":"REU","dn":"Reunion","n":593},{"oc":"NLD","on":"Netherlands","dc":"DEU","dn":"Germany","n":575},{"oc":"FRA","on":"France","dc":"PRT","dn":"Portugal","n":572},{"oc":"GBR","on":"United Kingdom","dc":"ESP","dn":"Spain","n":554},{"oc":"MEX","on":"Mexico","dc":"MEX","dn":"Mexico","n":542},{"oc":"REU","on":"Reunion","dc":"FRA","dn":"France","n":537},{"oc":"NLD","on":"Netherlands","dc":"BEL","dn":"Belgium","n":526},{"oc":"CHE","on":"Switzerland","dc":"CHE","dn":"Switzerland","n":523},{"oc":"DEU","on":"Germany","dc":"ITA","dn":"Italy","n":523},{"oc":"NZL","on":"New Zealand","dc":"NZL","dn":"New Zealand","n":506},{"oc":"PRT","on":"Portugal","dc":"ESP","dn":"Spain","n":501},{"oc":"ITA","on":"Italy","dc":"USA","dn":"United States","n":493},{"oc":"DNK","on":"Denmark","dc":"DNK","dn":"Denmark","n":491},{"oc":"DNK","on":"Denmark","dc":"FRA","dn":"France","n":460},{"oc":"ARG","on":"Argentina","dc":"ARG","dn":"Argentina","n":442},{"oc":"DEU","on":"Germany","dc":"NLD","dn":"Netherlands","n":422},{"oc":"GBR","on":"United Kingdom","dc":"USA","dn":"United States","n":414},{"oc":"CAN","on":"Canada","dc":"ESP","dn":"Spain","n":413},{"oc":"ESP","on":"Spain","dc":"BEL","dn":"Belgium","n":403},{"oc":"USA","on":"United States","dc":"GBR","dn":"United Kingdom","n":399},{"oc":"BRA","on":"Brazil","dc":"BRA","dn":"Brazil","n":397},{"oc":"FRA","on":"France","dc":"DNK","dn":"Denmark","n":396},{"oc":"PRT","on":"Portugal","dc":"FRA","dn":"France","n":381},{"oc":"BEL","on":"Belgium","dc":"NLD","dn":"Netherlands","n":380},{"oc":"NLD","on":"Netherlands","dc":"ITA","dn":"Italy","n":377},{"oc":"ITA","on":"Italy","dc":"DEU","dn":"Germany","n":373},{"oc":"FRA","on":"France","dc":"IRL","dn":"Ireland","n":368},{"oc":"BEL","on":"Belgium","dc":"ESP","dn":"Spain","n":366},{"oc":"CRI","on":"Costa Rica","dc":"USA","dn":"United States","n":364},{"oc":"IRL","on":"Ireland","dc":"FRA","dn":"France","n":344},{"oc":"IRL","on":"Ireland","dc":"ESP","dn":"Spain","n":337},{"oc":"ESP","on":"Spain","dc":"IRL","dn":"Ireland","n":333},{"oc":"MAR","on":"Morocco","dc":"FRA","dn":"France","n":328},{"oc":"MTQ","on":"Martinique","dc":"FRA","dn":"France","n":324},{"oc":"ITA","on":"Italy","dc":"NLD","dn":"Netherlands","n":319},{"oc":"DNK","on":"Denmark","dc":"DEU","dn":"Germany","n":315},{"oc":"PRT","on":"Portugal","dc":"PRT","dn":"Portugal","n":309},{"oc":"FRA","on":"France","dc":"MAR","dn":"Morocco","n":306},{"oc":"NLD","on":"Netherlands","dc":"USA","dn":"United States","n":302},{"oc":"DEU","on":"Germany","dc":"USA","dn":"United States","n":294},{"oc":"ESP","on":"Spain","dc":"CAN","dn":"Canada","n":294},{"oc":"FRA","on":"France","dc":"MEX","dn":"Mexico","n":285},{"oc":"USA","on":"United States","dc":"NLD","dn":"Netherlands","n":285},{"oc":"FRA","on":"France","dc":"MTQ","dn":"Martinique","n":277},{"oc":"FRA","on":"France","dc":"SWE","dn":"Sweden","n":276},{"oc":"DEU","on":"Germany","dc":"DNK","dn":"Denmark","n":276},{"oc":"FRA","on":"France","dc":"GRC","dn":"Greece","n":266},{"oc":"CAN","on":"Canada","dc":"MEX","dn":"Mexico","n":263},{"oc":"ESP","on":"Spain","dc":"CHE","dn":"Switzerland","n":263},{"oc":"FRA","on":"France","dc":"ISL","dn":"Iceland","n":262},{"oc":"ESP","on":"Spain","dc":"MEX","dn":"Mexico","n":259},{"oc":"ESP","on":"Spain","dc":"DNK","dn":"Denmark","n":256},{"oc":"USA","on":"United States","dc":"CRI","dn":"Costa Rica","n":255},{"oc":"AUS","on":"Australia","dc":"GBR","dn":"United Kingdom","n":250},{"oc":"FRA","on":"France","dc":"AUS","dn":"Australia","n":244},{"oc":"FRA","on":"France","dc":"NOR","dn":"Norway","n":241},{"oc":"DNK","on":"Denmark","dc":"ESP","dn":"Spain","n":240},{"oc":"USA","on":"United States","dc":"DEU","dn":"Germany","n":231},{"oc":"AUS","on":"Australia","dc":"FRA","dn":"France","n":222},{"oc":"ESP","on":"Spain","dc":"AUT","dn":"Austria","n":220},{"oc":"ITA","on":"Italy","dc":"GBR","dn":"United Kingdom","n":219},{"oc":"FRA","on":"France","dc":"AUT","dn":"Austria","n":217},{"oc":"ZAF","on":"South Africa","dc":"ZAF","dn":"South Africa","n":211},{"oc":"ESP","on":"Spain","dc":"HUN","dn":"Hungary","n":209},{"oc":"CAN","on":"Canada","dc":"ITA","dn":"Italy","n":207},{"oc":"GBR","on":"United Kingdom","dc":"ITA","dn":"Italy","n":205},{"oc":"GRC","on":"Greece","dc":"FRA","dn":"France","n":200},{"oc":"SWE","on":"Sweden","dc":"FRA","dn":"France","n":197},{"oc":"AUS","on":"Australia","dc":"USA","dn":"United States","n":197},{"oc":"SWE","on":"Sweden","dc":"SWE","dn":"Sweden","n":192},{"oc":"IRL","on":"Ireland","dc":"USA","dn":"United States","n":191},{"oc":"USA","on":"United States","dc":"PRT","dn":"Portugal","n":189},{"oc":"MEX","on":"Mexico","dc":"ESP","dn":"Spain","n":189},{"oc":"ITA","on":"Italy","dc":"CHE","dn":"Switzerland","n":189},{"oc":"HUN","on":"Hungary","dc":"HUN","dn":"Hungary","n":187},{"oc":"CHE","on":"Switzerland","dc":"ITA","dn":"Italy","n":184},{"oc":"ESP","on":"Spain","dc":"ISL","dn":"Iceland","n":183},{"oc":"USA","on":"United States","dc":"IRL","dn":"Ireland","n":183},{"oc":"ARG","on":"Argentina","dc":"ESP","dn":"Spain","n":182},{"oc":"SWE","on":"Sweden","dc":"ESP","dn":"Spain","n":180},{"oc":"BEL","on":"Belgium","dc":"ITA","dn":"Italy","n":178},{"oc":"DNK","on":"Denmark","dc":"USA","dn":"United States","n":177},{"oc":"NZL","on":"New Zealand","dc":"AUS","dn":"Australia","n":175},{"oc":"FRA","on":"France","dc":"HUN","dn":"Hungary","n":174},{"oc":"DEU","on":"Germany","dc":"CHE","dn":"Switzerland","n":173},{"oc":"MEX","on":"Mexico","dc":"FRA","dn":"France","n":172},{"oc":"CHE","on":"Switzerland","dc":"ESP","dn":"Spain","n":171},{"oc":"FRA","on":"France","dc":"PYF","dn":"French Polynesia","n":171},{"oc":"GBR","on":"United Kingdom","dc":"AUS","dn":"Australia","n":170},{"oc":"FRA","on":"France","dc":"HRV","dn":"Croatia","n":169},{"oc":"BEL","on":"Belgium","dc":"DEU","dn":"Germany","n":167},{"oc":"NOR","on":"Norway","dc":"FRA","dn":"France","n":166},{"oc":"ESP","on":"Spain","dc":"ARG","dn":"Argentina","n":164},{"oc":"USA","on":"United States","dc":"AUS","dn":"Australia","n":163},{"oc":"GLP","on":"Guadeloupe","dc":"GLP","dn":"Guadeloupe","n":162},{"oc":"AUT","on":"Austria","dc":"FRA","dn":"France","n":162},{"oc":"CRI","on":"Costa Rica","dc":"CRI","dn":"Costa Rica","n":161},{"oc":"ESP","on":"Spain","dc":"CZE","dn":"Czechia","n":160},{"oc":"ISL","on":"Iceland","dc":"ESP","dn":"Spain","n":160},{"oc":"DEU","on":"Germany","dc":"AUT","dn":"Austria","n":157},{"oc":"AUS","on":"Australia","dc":"NZL","dn":"New Zealand","n":155},{"oc":"BRA","on":"Brazil","dc":"FRA","dn":"France","n":152},{"oc":"ESP","on":"Spain","dc":"AND","dn":"Andorra","n":152},{"oc":"MEX","on":"Mexico","dc":"CAN","dn":"Canada","n":151},{"oc":"HUN","on":"Hungary","dc":"ESP","dn":"Spain","n":151},{"oc":"BRA","on":"Brazil","dc":"USA","dn":"United States","n":150},{"oc":"NLD","on":"Netherlands","dc":"CHE","dn":"Switzerland","n":148},{"oc":"FRA","on":"France","dc":"CRI","dn":"Costa Rica","n":148},{"oc":"FRA","on":"France","dc":"CZE","dn":"Czechia","n":145},{"oc":"CAN","on":"Canada","dc":"GBR","dn":"United Kingdom","n":144},{"oc":"ESP","on":"Spain","dc":"NOR","dn":"Norway","n":144},{"oc":"CAN","on":"Canada","dc":"CRI","dn":"Costa Rica","n":142},{"oc":"CAN","on":"Canada","dc":"AUS","dn":"Australia","n":141},{"oc":"USA","on":"United States","dc":"NZL","dn":"New Zealand","n":140},{"oc":"BRA","on":"Brazil","dc":"ESP","dn":"Spain","n":139},{"oc":"ESP","on":"Spain","dc":"SWE","dn":"Sweden","n":138},{"oc":"CHE","on":"Switzerland","dc":"DEU","dn":"Germany","n":138},{"oc":"AUS","on":"Australia","dc":"CAN","dn":"Canada","n":138},{"oc":"ISL","on":"Iceland","dc":"FRA","dn":"France","n":137},{"oc":"AUT","on":"Austria","dc":"ITA","dn":"Italy","n":134},{"oc":"FRA","on":"France","dc":"NZL","dn":"New Zealand","n":132},{"oc":"CZE","on":"Czechia","dc":"FRA","dn":"France","n":130},{"oc":"USA","on":"United States","dc":"CHE","dn":"Switzerland","n":130},{"oc":"CAN","on":"Canada","dc":"PRT","dn":"Portugal","n":126},{"oc":"ITA","on":"Italy","dc":"PRT","dn":"Portugal","n":122},{"oc":"IDN","on":"Indonesia","dc":"FRA","dn":"France","n":122},{"oc":"NLD","on":"Netherlands","dc":"DNK","dn":"Denmark","n":122},{"oc":"PRT","on":"Portugal","dc":"ITA","dn":"Italy","n":120},{"oc":"PYF","on":"French Polynesia","dc":"FRA","dn":"France","n":119},{"oc":"AUT","on":"Austria","dc":"AUT","dn":"Austria","n":119},{"oc":"AUT","on":"Austria","dc":"ESP","dn":"Spain","n":118},{"oc":"ITA","on":"Italy","dc":"AUT","dn":"Austria","n":118},{"oc":"NLD","on":"Netherlands","dc":"GBR","dn":"United Kingdom","n":117},{"oc":"FRA","on":"France","dc":"BRA","dn":"Brazil","n":117},{"oc":"FRA","on":"France","dc":"ARG","dn":"Argentina","n":117},{"oc":"ESP","on":"Spain","dc":"MAR","dn":"Morocco","n":117},{"oc":"HRV","on":"Croatia","dc":"HRV","dn":"Croatia","n":116},{"oc":"ITA","on":"Italy","dc":"BEL","dn":"Belgium","n":114},{"oc":"GBR","on":"United Kingdom","dc":"NLD","dn":"Netherlands","n":114},{"oc":"REU","on":"Reunion","dc":"REU","dn":"Reunion","n":113},{"oc":"MAR","on":"Morocco","dc":"ESP","dn":"Spain","n":112},{"oc":"DNK","on":"Denmark","dc":"ITA","dn":"Italy","n":111},{"oc":"PRT","on":"Portugal","dc":"USA","dn":"United States","n":111},{"oc":"ARG","on":"Argentina","dc":"FRA","dn":"France","n":110},{"oc":"DEU","on":"Germany","dc":"BEL","dn":"Belgium","n":109},{"oc":"GBR","on":"United Kingdom","dc":"DEU","dn":"Germany","n":108},{"oc":"NOR","on":"Norway","dc":"ESP","dn":"Spain","n":106},{"oc":"USA","on":"United States","dc":"PRI","dn":"Puerto Rico","n":106},{"oc":"FRA","on":"France","dc":"THA","dn":"Thailand","n":106},{"oc":"ESP","on":"Spain","dc":"BRA","dn":"Brazil","n":106},{"oc":"CZE","on":"Czechia","dc":"ESP","dn":"Spain","n":102},{"oc":"ESP","on":"Spain","dc":"AUS","dn":"Australia","n":102},{"oc":"CZE","on":"Czechia","dc":"ITA","dn":"Italy","n":102},{"oc":"ARG","on":"Argentina","dc":"USA","dn":"United States","n":100},{"oc":"AUT","on":"Austria","dc":"DEU","dn":"Germany","n":100},{"oc":"FRA","on":"France","dc":"MUS","dn":"Mauritius","n":99},{"oc":"DEU","on":"Germany","dc":"PRT","dn":"Portugal","n":99},{"oc":"ESP","on":"Spain","dc":"GRC","dn":"Greece","n":99},{"oc":"NOR","on":"Norway","dc":"NOR","dn":"Norway","n":98},{"oc":"IRL","on":"Ireland","dc":"GBR","dn":"United Kingdom","n":98},{"oc":"USA","on":"United States","dc":"ISL","dn":"Iceland","n":98},{"oc":"FRA","on":"France","dc":"IDN","dn":"Indonesia","n":98},{"oc":"DNK","on":"Denmark","dc":"NOR","dn":"Norway","n":97},{"oc":"IDN","on":"Indonesia","dc":"IDN","dn":"Indonesia","n":95},{"oc":"USA","on":"United States","dc":"DNK","dn":"Denmark","n":95},{"oc":"GBR","on":"United Kingdom","dc":"NZL","dn":"New Zealand","n":95},{"oc":"HUN","on":"Hungary","dc":"FRA","dn":"France","n":94},{"oc":"BRA","on":"Brazil","dc":"ITA","dn":"Italy","n":94},{"oc":"ESP","on":"Spain","dc":"CRI","dn":"Costa Rica","n":93},{"oc":"DEU","on":"Germany","dc":"GBR","dn":"United Kingdom","n":93},{"oc":"GLP","on":"Guadeloupe","dc":"CAN","dn":"Canada","n":92},{"oc":"HRV","on":"Croatia","dc":"FRA","dn":"France","n":90},{"oc":"PYF","on":"French Polynesia","dc":"PYF","dn":"French Polynesia","n":89},{"oc":"CHE","on":"Switzerland","dc":"USA","dn":"United States","n":89},{"oc":"ESP","on":"Spain","dc":"POL","dn":"Poland","n":88},{"oc":"NZL","on":"New Zealand","dc":"USA","dn":"United States","n":88},{"oc":"USA","on":"United States","dc":"AUT","dn":"Austria","n":88},{"oc":"GBR","on":"United Kingdom","dc":"IRL","dn":"Ireland","n":85},{"oc":"NZL","on":"New Zealand","dc":"FRA","dn":"France","n":85},{"oc":"NLD","on":"Netherlands","dc":"AUT","dn":"Austria","n":85},{"oc":"BEL","on":"Belgium","dc":"USA","dn":"United States","n":84},{"oc":"DEU","on":"Germany","dc":"SWE","dn":"Sweden","n":84},{"oc":"DEU","on":"Germany","dc":"CAN","dn":"Canada","n":83},{"oc":"POL","on":"Poland","dc":"ESP","dn":"Spain","n":83},{"oc":"ESP","on":"Spain","dc":"HRV","dn":"Croatia","n":82},{"oc":"AUS","on":"Australia","dc":"ESP","dn":"Spain","n":82},{"oc":"ITA","on":"Italy","dc":"HRV","dn":"Croatia","n":82},{"oc":"CAN","on":"Canada","dc":"NLD","dn":"Netherlands","n":81},{"oc":"NLD","on":"Netherlands","dc":"PRT","dn":"Portugal","n":81},{"oc":"IRL","on":"Ireland","dc":"ITA","dn":"Italy","n":80},{"oc":"ITA","on":"Italy","dc":"IRL","dn":"Ireland","n":80},{"oc":"AUS","on":"Australia","dc":"ITA","dn":"Italy","n":80},{"oc":"GBR","on":"United Kingdom","dc":"CAN","dn":"Canada","n":80},{"oc":"FRA","on":"France","dc":"ZAF","dn":"South Africa","n":79},{"oc":"ITA","on":"Italy","dc":"DNK","dn":"Denmark","n":78},{"oc":"ITA","on":"Italy","dc":"CAN","dn":"Canada","n":78},{"oc":"HUN","on":"Hungary","dc":"USA","dn":"United States","n":77},{"oc":"ZAF","on":"South Africa","dc":"FRA","dn":"France","n":76},{"oc":"USA","on":"United States","dc":"BEL","dn":"Belgium","n":75},{"oc":"IDN","on":"Indonesia","dc":"AUS","dn":"Australia","n":75},{"oc":"DNK","on":"Denmark","dc":"SWE","dn":"Sweden","n":74},{"oc":"HRV","on":"Croatia","dc":"ESP","dn":"Spain","n":74},{"oc":"HRV","on":"Croatia","dc":"ITA","dn":"Italy","n":74},{"oc":"PRI","on":"Puerto Rico","dc":"USA","dn":"United States","n":74},{"oc":"THA","on":"Thailand","dc":"THA","dn":"Thailand","n":74},{"oc":"CHE","on":"Switzerland","dc":"NLD","dn":"Netherlands","n":73},{"oc":"SWE","on":"Sweden","dc":"USA","dn":"United States","n":72},{"oc":"ISL","on":"Iceland","dc":"USA","dn":"United States","n":71},{"oc":"ITA","on":"Italy","dc":"HUN","dn":"Hungary","n":70},{"oc":"ESP","on":"Spain","dc":"IDN","dn":"Indonesia","n":70},{"oc":"USA","on":"United States","dc":"HRV","dn":"Croatia","n":70},{"oc":"NOR","on":"Norway","dc":"DNK","dn":"Denmark","n":69},{"oc":"MUS","on":"Mauritius","dc":"FRA","dn":"France","n":68},{"oc":"HUN","on":"Hungary","dc":"ITA","dn":"Italy","n":68},{"oc":"COL","on":"Colombia","dc":"USA","dn":"United States","n":67},{"oc":"ISR","on":"Israel","dc":"FRA","dn":"France","n":67},{"oc":"CAN","on":"Canada","dc":"GLP","dn":"Guadeloupe","n":67},{"oc":"DNK","on":"Denmark","dc":"NLD","dn":"Netherlands","n":66},{"oc":"IDN","on":"Indonesia","dc":"USA","dn":"United States","n":66},{"oc":"BEL","on":"Belgium","dc":"CHE","dn":"Switzerland","n":64},{"oc":"FRA","on":"France","dc":"COL","dn":"Colombia","n":64},{"oc":"AUT","on":"Austria","dc":"USA","dn":"United States","n":64},{"oc":"FRA","on":"France","dc":"ISR","dn":"Israel","n":64},{"oc":"USA","on":"United States","dc":"ARG","dn":"Argentina","n":64},{"oc":"FRA","on":"France","dc":"MLT","dn":"Malta","n":63},{"oc":"ITA","on":"Italy","dc":"GRC","dn":"Greece","n":63},{"oc":"AND","on":"Andorra","dc":"ESP","dn":"Spain","n":62},{"oc":"PRT","on":"Portugal","dc":"NLD","dn":"Netherlands","n":62},{"oc":"NLD","on":"Netherlands","dc":"CAN","dn":"Canada","n":62},{"oc":"ARG","on":"Argentina","dc":"ITA","dn":"Italy","n":62},{"oc":"CZE","on":"Czechia","dc":"CZE","dn":"Czechia","n":61},{"oc":"ZAF","on":"South Africa","dc":"USA","dn":"United States","n":61},{"oc":"SWE","on":"Sweden","dc":"DNK","dn":"Denmark","n":61},{"oc":"ISR","on":"Israel","dc":"USA","dn":"United States","n":60},{"oc":"ARG","on":"Argentina","dc":"BRA","dn":"Brazil","n":60},{"oc":"NZL","on":"New Zealand","dc":"GBR","dn":"United Kingdom","n":60},{"oc":"DNK","on":"Denmark","dc":"CHE","dn":"Switzerland","n":60},{"oc":"ITA","on":"Italy","dc":"ISL","dn":"Iceland","n":59},{"oc":"FRA","on":"France","dc":"FIN","dn":"Finland","n":59},{"oc":"USA","on":"United States","dc":"CZE","dn":"Czechia","n":59},{"oc":"GBR","on":"United Kingdom","dc":"PRT","dn":"Portugal","n":58},{"oc":"SWE","on":"Sweden","dc":"DEU","dn":"Germany","n":58},{"oc":"NLD","on":"Netherlands","dc":"SWE","dn":"Sweden","n":58},{"oc":"ITA","on":"Italy","dc":"MEX","dn":"Mexico","n":58},{"oc":"PYF","on":"French Polynesia","dc":"USA","dn":"United States","n":57},{"oc":"GRC","on":"Greece","dc":"ESP","dn":"Spain","n":57},{"oc":"USA","on":"United States","dc":"IDN","dn":"Indonesia","n":56},{"oc":"FRA","on":"France","dc":"SVN","dn":"Slovenia","n":56},{"oc":"NLD","on":"Netherlands","dc":"ZAF","dn":"South Africa","n":56},{"oc":"DEU","on":"Germany","dc":"HRV","dn":"Croatia","n":55},{"oc":"USA","on":"United States","dc":"BRA","dn":"Brazil","n":55},{"oc":"CAN","on":"Canada","dc":"IRL","dn":"Ireland","n":55},{"oc":"PRT","on":"Portugal","dc":"GBR","dn":"United Kingdom","n":55},{"oc":"GRC","on":"Greece","dc":"ITA","dn":"Italy","n":54},{"oc":"GLP","on":"Guadeloupe","dc":"USA","dn":"United States","n":54},{"oc":"USA","on":"United States","dc":"HUN","dn":"Hungary","n":54},{"oc":"DEU","on":"Germany","dc":"AUS","dn":"Australia","n":54},{"oc":"POL","on":"Poland","dc":"ITA","dn":"Italy","n":54},{"oc":"MAR","on":"Morocco","dc":"MAR","dn":"Morocco","n":54},{"oc":"COL","on":"Colombia","dc":"ESP","dn":"Spain","n":54},{"oc":"BEL","on":"Belgium","dc":"DNK","dn":"Denmark","n":53},{"oc":"NOR","on":"Norway","dc":"ITA","dn":"Italy","n":53},{"oc":"ESP","on":"Spain","dc":"ZAF","dn":"South Africa","n":53},{"oc":"MAR","on":"Morocco","dc":"USA","dn":"United States","n":53},{"oc":"ESP","on":"Spain","dc":"COL","dn":"Colombia","n":52},{"oc":"COL","on":"Colombia","dc":"COL","dn":"Colombia","n":52},{"oc":"GBR","on":"United Kingdom","dc":"MEX","dn":"Mexico","n":52},{"oc":"CAN","on":"Canada","dc":"BEL","dn":"Belgium","n":52},{"oc":"IRL","on":"Ireland","dc":"NLD","dn":"Netherlands","n":52},{"oc":"GRC","on":"Greece","dc":"GRC","dn":"Greece","n":52},{"oc":"ESP","on":"Spain","dc":"TUR","dn":"Turkey","n":52},{"oc":"AND","on":"Andorra","dc":"FRA","dn":"France","n":52},{"oc":"AUT","on":"Austria","dc":"NLD","dn":"Netherlands","n":51},{"oc":"MTQ","on":"Martinique","dc":"CAN","dn":"Canada","n":51},{"oc":"USA","on":"United States","dc":"COL","dn":"Colombia","n":51},{"oc":"SWE","on":"Sweden","dc":"ITA","dn":"Italy","n":50},{"oc":"PRT","on":"Portugal","dc":"DEU","dn":"Germany","n":50},{"oc":"HRV","on":"Croatia","dc":"USA","dn":"United States","n":50},{"oc":"FRA","on":"France","dc":"AND","dn":"Andorra","n":50},{"oc":"FRA","on":"France","dc":"POL","dn":"Poland","n":50},{"oc":"IRL","on":"Ireland","dc":"DEU","dn":"Germany","n":50},{"oc":"CAN","on":"Canada","dc":"MTQ","dn":"Martinique","n":50}];
+
+const N2I={"4":"AFG","8":"ALB","12":"DZA","24":"AGO","32":"ARG","36":"AUS","40":"AUT","50":"BGD","56":"BEL","64":"BTN","68":"BOL","76":"BRA","100":"BGR","104":"MMR","116":"KHM","120":"CMR","124":"CAN","152":"CHL","156":"CHN","170":"COL","178":"COG","180":"COD","188":"CRI","191":"HRV","192":"CUB","196":"CYP","203":"CZE","208":"DNK","214":"DOM","218":"ECU","818":"EGY","222":"SLV","231":"ETH","246":"FIN","250":"FRA","276":"DEU","288":"GHA","300":"GRC","320":"GTM","324":"GIN","332":"HTI","340":"HND","348":"HUN","356":"IND","360":"IDN","364":"IRN","368":"IRQ","372":"IRL","376":"ISR","380":"ITA","392":"JPN","398":"KAZ","404":"KEN","408":"PRK","410":"KOR","418":"LAO","428":"LVA","422":"LBN","440":"LTU","450":"MDG","454":"MWI","458":"MYS","484":"MEX","504":"MAR","508":"MOZ","516":"NAM","524":"NPL","528":"NLD","554":"NZL","558":"NIC","566":"NGA","578":"NOR","586":"PAK","591":"PAN","600":"PRY","604":"PER","608":"PHL","616":"POL","620":"PRT","642":"ROU","643":"RUS","646":"RWA","682":"SAU","686":"SEN","710":"ZAF","724":"ESP","729":"SDN","752":"SWE","756":"CHE","760":"SYR","764":"THA","788":"TUN","792":"TUR","800":"UGA","804":"UKR","784":"ARE","826":"GBR","840":"USA","858":"URY","862":"VEN","704":"VNM","894":"ZMB","716":"ZWE","703":"SVK","705":"SVN","233":"EST","352":"ISL"};
+
+const CTRIES=[["FRA","France"],["ESP","Spain"],["USA","United States"],["ITA","Italy"],["CAN","Canada"],["NLD","Netherlands"],["DEU","Germany"],["GBR","United Kingdom"],["BEL","Belgium"],["AUS","Australia"],["DNK","Denmark"],["CHE","Switzerland"],["IRL","Ireland"],["MEX","Mexico"],["PRT","Portugal"],["BRA","Brazil"],["NZL","New Zealand"],["ARG","Argentina"],["GLP","Guadeloupe"],["AUT","Austria"],["SWE","Sweden"],["HUN","Hungary"],["REU","Reunion"],["CRI","Costa Rica"],["MAR","Morocco"],["NOR","Norway"],["ISL","Iceland"],["CZE","Czechia"],["IDN","Indonesia"],["HRV","Croatia"],["ZAF","South Africa"],["MTQ","Martinique"],["GRC","Greece"],["PYF","French Polynesia"],["POL","Poland"],["THA","Thailand"],["COL","Colombia"],["ISR","Israel"],["NCL","New Caledonia"],["AND","Andorra"],["SVN","Slovenia"],["TUR","Turkey"],["RUS","Russia Federation"],["FIN","Finland"],["PRI","Puerto Rico"],["MUS","Mauritius"],["ARE","United Arab Emirates"],["CHL","Chile"],["BGR","Bulgaria"],["PAN","Panama"],["SEN","Senegal"],["DOM","Dominican Republic"],["MLT","Malta"],["TUN","Tunisia"],["GUF","French Guiana"],["MYS","Malaysia"],["KHM","Cambodia"],["IND","India"],["BWA","Botswana"],["SGP","Singapore"],["GTM","Guatemala"],["VIR","Virgin Islands, U.S."],["ABW","Aruba"],["ECU","Ecuador"],["BHS","Bahamas"],["JPN","Japan"]];
+
+let mode='d', selC='FRA', barChart=null, mapG=null, mapReady=false;
+
+// Dropdown
+const dd=document.getElementById('sel');
+CTRIES.forEach(([c,n])=>{const o=document.createElement('option');o.value=c;o.textContent=n;if(c==='FRA')o.selected=true;dd.appendChild(o);});
+dd.addEventListener('change',e=>{selC=e.target.value;render();});
+
+function setMode(m){mode=m;document.getElementById('btnD').classList.toggle('active',m==='d');document.getElementById('btnO').classList.toggle('active',m==='o');render();}
+
+function getRows(){return RAW.filter(r=>mode==='d'?(r.oc===selC&&r.dc!==selC):(r.dc===selC&&r.oc!==selC)).sort((a,b)=>b.n-a.n);}
+function getAllRows(){return RAW.filter(r=>mode==='d'?r.oc===selC:r.dc===selC);}
+function name(c){return CTRIES.find(x=>x[0]===c)?.[1]||c;}
+
+function render(){
+  const rows=getRows(), all=getAllRows(), top10=rows.slice(0,10), n=name(selC);
+  const total=all.reduce((s,r)=>s+r.n,0);
+  const reach=new Set(all.map(r=>mode==='d'?r.dc:r.oc)).size-1;
+  const top=top10[0];
+  document.getElementById('sTotal').textContent=total.toLocaleString();
+  document.getElementById('sSub').textContent=mode==='d'?`from ${n}`:`to ${n}`;
+  document.getElementById('sTopLbl').textContent=mode==='d'?'Top destination':'Top origin';
+  document.getElementById('sTop').textContent=top?(mode==='d'?top.dn:top.on):'—';
+  document.getElementById('sTopN').textContent=top?`${top.n.toLocaleString()} exchanges`:'';
+  document.getElementById('sRchLbl').textContent=mode==='d'?'Countries reached':'Countries visiting';
+  document.getElementById('sRch').textContent=reach;
+  document.getElementById('cTitle').textContent=mode==='d'?`Where ${n} members travel`:`Who visits ${n}`;
+
+  if(barChart)barChart.destroy();
+  barChart=new Chart(document.getElementById('chart').getContext('2d'),{type:'bar',data:{labels:top10.map(r=>mode==='d'?r.dn:r.on),datasets:[{data:top10.map(r=>r.n),backgroundColor:'#B5D4F4',borderColor:'#185FA5',borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1916',titleFont:{family:"'DM Mono',monospace",size:11},bodyFont:{family:"'DM Mono',monospace",size:11},callbacks:{label:c=>` ${c.parsed.x.toLocaleString()} exchanges`}}},scales:{x:{ticks:{font:{family:"'DM Mono',monospace",size:10},color:'#9c9a94'},grid:{color:'#f0ede8'}},y:{ticks:{font:{family:"'DM Mono',monospace",size:11},color:'#1a1916'},grid:{display:false}}}}});
+
+  if(mapReady)colorMap(rows);
+}
+
+function colorMap(rows){
+  const lu={};rows.forEach(r=>{lu[mode==='d'?r.dc:r.oc]=r.n;});
+  const mx=Math.max(...Object.values(lu),1);
+  mapG.selectAll('.c').attr('class',d=>{
+    const iso=N2I[String(d.id)]||'';
+    if(iso===selC)return 'c sel';
+    const v=lu[iso];if(!v)return 'c';
+    const p=v/mx;return p>.6?'c hi3':p>.2?'c hi2':'c hi1';
+  });
+}
+
+// Map
+const W=680,H=260;
+const proj=d3.geoNaturalEarth1().scale(103).translate([W/2,H/2]);
+const pFn=d3.geoPath().projection(proj);
+const svg=d3.select('#map').attr('viewBox',`0 0 ${W} ${H}`);
+mapG=svg.append('g');
+const tip=document.getElementById('tip');
+
+d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world=>{
+  const countries=topojson.feature(world,world.objects.countries);
+  mapG.selectAll('.c').data(countries.features).enter().append('path')
+    .attr('class','c').attr('d',pFn)
+    .on('mousemove',function(event,d){
+      const iso=N2I[String(d.id)]||'';
+      const n=CTRIES.find(c=>c[0]===iso)?.[1]||iso;
+      if(!n)return;
+      const lu={};getRows().forEach(r=>{lu[mode==='d'?r.dc:r.oc]=r.n;});
+      const v=lu[iso];
+      tip.style.display='block';
+      tip.style.left=(event.offsetX+12)+'px';
+      tip.style.top=(event.offsetY-28)+'px';
+      tip.textContent=v?`${n}: ${v.toLocaleString()} exchanges`:n;
+    })
+    .on('mouseleave',()=>{tip.style.display='none';});
+  mapReady=true;
+  render();
+});
+
+
+// Scrollspy
+const chapters = document.querySelectorAll('.chapter, .project-header');
+const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+function getActiveSection() {
+  const scrollY = window.scrollY + 120;
+  let active = 'overview';
+  chapters.forEach(ch => {
+    if (ch.offsetTop <= scrollY) active = ch.id;
+  });
+  return active;
+}
+
+function updateNav() {
+  const active = getActiveSection();
+  navLinks.forEach(a => {
+    const href = a.getAttribute('href').replace('#','');
+    a.classList.toggle('active', href === active);
+  });
+}
+
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+
+// Collapsible code blocks
+document.querySelectorAll('.code-block-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const open = btn.parentElement.classList.contains('open');
+    btn.querySelector('.code-block-chevron').textContent = open ? '▾ show query' : '▴ hide query';
+  });
+});
+</script>
 </body>
 </html>
