@@ -1245,7 +1245,12 @@
   </div>
 </footer>
 
+
 <script>
+// Expose geo functions globally before DOM loads
+var mode='d', selC='FRA', barChart=null, mapG=null, mapReady=false;
+function setMode(m){mode=m;var btnD=document.getElementById('btnD');var btnO=document.getElementById('btnO');if(btnD)btnD.classList.toggle('active',m==='d');if(btnO)btnO.classList.toggle('active',m==='o');if(typeof render==='function')render();}
+document.addEventListener("DOMContentLoaded", function() {
 
 const ctx = document.getElementById('churnChart').getContext('2d');
 new Chart(ctx, {
@@ -1707,7 +1712,7 @@ const N2I={"4":"AFG","8":"ALB","12":"DZA","24":"AGO","32":"ARG","36":"AUS","40":
 
 const CTRIES=[["FRA","France"],["ESP","Spain"],["USA","United States"],["ITA","Italy"],["CAN","Canada"],["NLD","Netherlands"],["DEU","Germany"],["GBR","United Kingdom"],["BEL","Belgium"],["AUS","Australia"],["DNK","Denmark"],["CHE","Switzerland"],["IRL","Ireland"],["MEX","Mexico"],["PRT","Portugal"],["BRA","Brazil"],["NZL","New Zealand"],["ARG","Argentina"],["GLP","Guadeloupe"],["AUT","Austria"],["SWE","Sweden"],["HUN","Hungary"],["REU","Reunion"],["CRI","Costa Rica"],["MAR","Morocco"],["NOR","Norway"],["ISL","Iceland"],["CZE","Czechia"],["IDN","Indonesia"],["HRV","Croatia"],["ZAF","South Africa"],["MTQ","Martinique"],["GRC","Greece"],["PYF","French Polynesia"],["POL","Poland"],["THA","Thailand"],["COL","Colombia"],["ISR","Israel"],["NCL","New Caledonia"],["AND","Andorra"],["SVN","Slovenia"],["TUR","Turkey"],["RUS","Russia Federation"],["FIN","Finland"],["PRI","Puerto Rico"],["MUS","Mauritius"],["ARE","United Arab Emirates"],["CHL","Chile"],["BGR","Bulgaria"],["PAN","Panama"],["SEN","Senegal"],["DOM","Dominican Republic"],["MLT","Malta"],["TUN","Tunisia"],["GUF","French Guiana"],["MYS","Malaysia"],["KHM","Cambodia"],["IND","India"],["BWA","Botswana"],["SGP","Singapore"],["GTM","Guatemala"],["VIR","Virgin Islands, U.S."],["ABW","Aruba"],["ECU","Ecuador"],["BHS","Bahamas"],["JPN","Japan"]];
 
-let mode='d', selC='FRA', barChart=null, mapG=null, mapReady=false;
+// mode, selC, barChart, mapG, mapReady already declared globally
 
 // Dropdown
 const dd=document.getElementById('sel');
@@ -1810,6 +1815,7 @@ document.querySelectorAll('.code-block-toggle').forEach(btn => {
     const open = btn.parentElement.classList.contains('open');
     btn.querySelector('.code-block-chevron').textContent = open ? '▾ show query' : '▴ hide query';
   });
+});
 });
 </script>
 </body>
