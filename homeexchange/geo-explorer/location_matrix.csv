@@ -1,1 +1,569 @@
-
+origin_country,origin_name,destination_country,destination_name,total_exchanges
+FRA,France,FRA,France,66757
+ESP,Spain,ESP,Spain,24980
+USA,United States,USA,United States,21977
+FRA,France,ESP,Spain,6995
+ESP,Spain,FRA,France,6003
+CAN,Canada,CAN,Canada,5342
+ITA,Italy,ITA,Italy,4889
+FRA,France,ITA,Italy,3067
+FRA,France,USA,United States,2151
+NLD,Netherlands,NLD,Netherlands,2052
+AUS,Australia,AUS,Australia,2048
+ITA,Italy,FRA,France,1874
+NLD,Netherlands,FRA,France,1736
+DEU,Germany,DEU,Germany,1709
+FRA,France,CAN,Canada,1697
+USA,United States,FRA,France,1685
+CAN,Canada,USA,United States,1587
+BEL,Belgium,FRA,France,1559
+ESP,Spain,ITA,Italy,1499
+DEU,Germany,FRA,France,1321
+FRA,France,NLD,Netherlands,1319
+GBR,United Kingdom,GBR,United Kingdom,1295
+FRA,France,BEL,Belgium,1218
+CAN,Canada,FRA,France,1189
+ITA,Italy,ESP,Spain,1188
+ESP,Spain,USA,United States,1104
+FRA,France,DEU,Germany,1096
+USA,United States,ESP,Spain,1032
+BEL,Belgium,BEL,Belgium,991
+USA,United States,CAN,Canada,979
+USA,United States,MEX,Mexico,951
+ESP,Spain,DEU,Germany,915
+FRA,France,CHE,Switzerland,865
+NLD,Netherlands,ESP,Spain,865
+CHE,Switzerland,FRA,France,808
+ESP,Spain,PRT,Portugal,789
+FRA,France,GBR,United Kingdom,782
+GBR,United Kingdom,FRA,France,754
+DEU,Germany,ESP,Spain,730
+IRL,Ireland,IRL,Ireland,711
+ESP,Spain,NLD,Netherlands,698
+MEX,Mexico,USA,United States,685
+FRA,France,GLP,Guadeloupe,667
+ESP,Spain,GBR,United Kingdom,661
+GLP,Guadeloupe,FRA,France,630
+USA,United States,ITA,Italy,599
+FRA,France,REU,Reunion,593
+NLD,Netherlands,DEU,Germany,575
+FRA,France,PRT,Portugal,572
+GBR,United Kingdom,ESP,Spain,554
+MEX,Mexico,MEX,Mexico,542
+REU,Reunion,FRA,France,537
+NLD,Netherlands,BEL,Belgium,526
+CHE,Switzerland,CHE,Switzerland,523
+DEU,Germany,ITA,Italy,523
+NZL,New Zealand,NZL,New Zealand,506
+PRT,Portugal,ESP,Spain,501
+ITA,Italy,USA,United States,493
+DNK,Denmark,DNK,Denmark,491
+DNK,Denmark,FRA,France,460
+ARG,Argentina,ARG,Argentina,442
+DEU,Germany,NLD,Netherlands,422
+GBR,United Kingdom,USA,United States,414
+CAN,Canada,ESP,Spain,413
+ESP,Spain,BEL,Belgium,403
+USA,United States,GBR,United Kingdom,399
+BRA,Brazil,BRA,Brazil,397
+FRA,France,DNK,Denmark,396
+PRT,Portugal,FRA,France,381
+BEL,Belgium,NLD,Netherlands,380
+NLD,Netherlands,ITA,Italy,377
+ITA,Italy,DEU,Germany,373
+FRA,France,IRL,Ireland,368
+BEL,Belgium,ESP,Spain,366
+CRI,Costa Rica,USA,United States,364
+IRL,Ireland,FRA,France,344
+IRL,Ireland,ESP,Spain,337
+ESP,Spain,IRL,Ireland,333
+MAR,Morocco,FRA,France,328
+MTQ,Martinique,FRA,France,324
+ITA,Italy,NLD,Netherlands,319
+DNK,Denmark,DEU,Germany,315
+PRT,Portugal,PRT,Portugal,309
+FRA,France,MAR,Morocco,306
+NLD,Netherlands,USA,United States,302
+DEU,Germany,USA,United States,294
+ESP,Spain,CAN,Canada,294
+FRA,France,MEX,Mexico,285
+USA,United States,NLD,Netherlands,285
+FRA,France,MTQ,Martinique,277
+FRA,France,SWE,Sweden,276
+DEU,Germany,DNK,Denmark,276
+FRA,France,GRC,Greece,266
+CAN,Canada,MEX,Mexico,263
+ESP,Spain,CHE,Switzerland,263
+FRA,France,ISL,Iceland,262
+ESP,Spain,MEX,Mexico,259
+ESP,Spain,DNK,Denmark,256
+USA,United States,CRI,Costa Rica,255
+AUS,Australia,GBR,United Kingdom,250
+FRA,France,AUS,Australia,244
+FRA,France,NOR,Norway,241
+DNK,Denmark,ESP,Spain,240
+USA,United States,DEU,Germany,231
+AUS,Australia,FRA,France,222
+ESP,Spain,AUT,Austria,220
+ITA,Italy,GBR,United Kingdom,219
+FRA,France,AUT,Austria,217
+ZAF,South Africa,ZAF,South Africa,211
+ESP,Spain,HUN,Hungary,209
+CAN,Canada,ITA,Italy,207
+GBR,United Kingdom,ITA,Italy,205
+GRC,Greece,FRA,France,200
+SWE,Sweden,FRA,France,197
+AUS,Australia,USA,United States,197
+SWE,Sweden,SWE,Sweden,192
+IRL,Ireland,USA,United States,191
+USA,United States,PRT,Portugal,189
+MEX,Mexico,ESP,Spain,189
+ITA,Italy,CHE,Switzerland,189
+HUN,Hungary,HUN,Hungary,187
+CHE,Switzerland,ITA,Italy,184
+ESP,Spain,ISL,Iceland,183
+USA,United States,IRL,Ireland,183
+ARG,Argentina,ESP,Spain,182
+SWE,Sweden,ESP,Spain,180
+BEL,Belgium,ITA,Italy,178
+DNK,Denmark,USA,United States,177
+NZL,New Zealand,AUS,Australia,175
+FRA,France,HUN,Hungary,174
+DEU,Germany,CHE,Switzerland,173
+MEX,Mexico,FRA,France,172
+CHE,Switzerland,ESP,Spain,171
+FRA,France,PYF,French Polynesia,171
+GBR,United Kingdom,AUS,Australia,170
+FRA,France,HRV,Croatia,169
+BEL,Belgium,DEU,Germany,167
+NOR,Norway,FRA,France,166
+ESP,Spain,ARG,Argentina,164
+USA,United States,AUS,Australia,163
+GLP,Guadeloupe,GLP,Guadeloupe,162
+AUT,Austria,FRA,France,162
+CRI,Costa Rica,CRI,Costa Rica,161
+ESP,Spain,CZE,Czechia,160
+ISL,Iceland,ESP,Spain,160
+DEU,Germany,AUT,Austria,157
+AUS,Australia,NZL,New Zealand,155
+BRA,Brazil,FRA,France,152
+ESP,Spain,AND,Andorra,152
+MEX,Mexico,CAN,Canada,151
+HUN,Hungary,ESP,Spain,151
+BRA,Brazil,USA,United States,150
+NLD,Netherlands,CHE,Switzerland,148
+FRA,France,CRI,Costa Rica,148
+FRA,France,CZE,Czechia,145
+CAN,Canada,GBR,United Kingdom,144
+ESP,Spain,NOR,Norway,144
+CAN,Canada,CRI,Costa Rica,142
+CAN,Canada,AUS,Australia,141
+USA,United States,NZL,New Zealand,140
+BRA,Brazil,ESP,Spain,139
+ESP,Spain,SWE,Sweden,138
+CHE,Switzerland,DEU,Germany,138
+AUS,Australia,CAN,Canada,138
+ISL,Iceland,FRA,France,137
+AUT,Austria,ITA,Italy,134
+FRA,France,NZL,New Zealand,132
+CZE,Czechia,FRA,France,130
+USA,United States,CHE,Switzerland,130
+CAN,Canada,PRT,Portugal,126
+ITA,Italy,PRT,Portugal,122
+IDN,Indonesia,FRA,France,122
+NLD,Netherlands,DNK,Denmark,122
+PRT,Portugal,ITA,Italy,120
+PYF,French Polynesia,FRA,France,119
+AUT,Austria,AUT,Austria,119
+AUT,Austria,ESP,Spain,118
+ITA,Italy,AUT,Austria,118
+NLD,Netherlands,GBR,United Kingdom,117
+FRA,France,BRA,Brazil,117
+FRA,France,ARG,Argentina,117
+ESP,Spain,MAR,Morocco,117
+HRV,Croatia,HRV,Croatia,116
+ITA,Italy,BEL,Belgium,114
+GBR,United Kingdom,NLD,Netherlands,114
+REU,Reunion,REU,Reunion,113
+MAR,Morocco,ESP,Spain,112
+DNK,Denmark,ITA,Italy,111
+PRT,Portugal,USA,United States,111
+ARG,Argentina,FRA,France,110
+DEU,Germany,BEL,Belgium,109
+GBR,United Kingdom,DEU,Germany,108
+NOR,Norway,ESP,Spain,106
+USA,United States,PRI,Puerto Rico,106
+FRA,France,THA,Thailand,106
+ESP,Spain,BRA,Brazil,106
+CZE,Czechia,ESP,Spain,102
+ESP,Spain,AUS,Australia,102
+CZE,Czechia,ITA,Italy,102
+ARG,Argentina,USA,United States,100
+AUT,Austria,DEU,Germany,100
+FRA,France,MUS,Mauritius,99
+DEU,Germany,PRT,Portugal,99
+ESP,Spain,GRC,Greece,99
+NOR,Norway,NOR,Norway,98
+IRL,Ireland,GBR,United Kingdom,98
+USA,United States,ISL,Iceland,98
+FRA,France,IDN,Indonesia,98
+DNK,Denmark,NOR,Norway,97
+IDN,Indonesia,IDN,Indonesia,95
+USA,United States,DNK,Denmark,95
+GBR,United Kingdom,NZL,New Zealand,95
+HUN,Hungary,FRA,France,94
+BRA,Brazil,ITA,Italy,94
+ESP,Spain,CRI,Costa Rica,93
+DEU,Germany,GBR,United Kingdom,93
+GLP,Guadeloupe,CAN,Canada,92
+HRV,Croatia,FRA,France,90
+PYF,French Polynesia,PYF,French Polynesia,89
+CHE,Switzerland,USA,United States,89
+ESP,Spain,POL,Poland,88
+NZL,New Zealand,USA,United States,88
+USA,United States,AUT,Austria,88
+GBR,United Kingdom,IRL,Ireland,85
+NZL,New Zealand,FRA,France,85
+NLD,Netherlands,AUT,Austria,85
+BEL,Belgium,USA,United States,84
+DEU,Germany,SWE,Sweden,84
+DEU,Germany,CAN,Canada,83
+POL,Poland,ESP,Spain,83
+ESP,Spain,HRV,Croatia,82
+AUS,Australia,ESP,Spain,82
+ITA,Italy,HRV,Croatia,82
+CAN,Canada,NLD,Netherlands,81
+NLD,Netherlands,PRT,Portugal,81
+IRL,Ireland,ITA,Italy,80
+ITA,Italy,IRL,Ireland,80
+AUS,Australia,ITA,Italy,80
+GBR,United Kingdom,CAN,Canada,80
+FRA,France,ZAF,South Africa,79
+ITA,Italy,DNK,Denmark,78
+ITA,Italy,CAN,Canada,78
+HUN,Hungary,USA,United States,77
+ZAF,South Africa,FRA,France,76
+USA,United States,BEL,Belgium,75
+IDN,Indonesia,AUS,Australia,75
+DNK,Denmark,SWE,Sweden,74
+HRV,Croatia,ESP,Spain,74
+HRV,Croatia,ITA,Italy,74
+PRI,Puerto Rico,USA,United States,74
+THA,Thailand,THA,Thailand,74
+CHE,Switzerland,NLD,Netherlands,73
+SWE,Sweden,USA,United States,72
+ISL,Iceland,USA,United States,71
+ITA,Italy,HUN,Hungary,70
+ESP,Spain,IDN,Indonesia,70
+USA,United States,HRV,Croatia,70
+NOR,Norway,DNK,Denmark,69
+MUS,Mauritius,FRA,France,68
+HUN,Hungary,ITA,Italy,68
+COL,Colombia,USA,United States,67
+ISR,Israel,FRA,France,67
+CAN,Canada,GLP,Guadeloupe,67
+DNK,Denmark,NLD,Netherlands,66
+IDN,Indonesia,USA,United States,66
+BEL,Belgium,CHE,Switzerland,64
+FRA,France,COL,Colombia,64
+AUT,Austria,USA,United States,64
+FRA,France,ISR,Israel,64
+USA,United States,ARG,Argentina,64
+FRA,France,MLT,Malta,63
+ITA,Italy,GRC,Greece,63
+AND,Andorra,ESP,Spain,62
+PRT,Portugal,NLD,Netherlands,62
+NLD,Netherlands,CAN,Canada,62
+ARG,Argentina,ITA,Italy,62
+CZE,Czechia,CZE,Czechia,61
+ZAF,South Africa,USA,United States,61
+SWE,Sweden,DNK,Denmark,61
+ISR,Israel,USA,United States,60
+ARG,Argentina,BRA,Brazil,60
+NZL,New Zealand,GBR,United Kingdom,60
+DNK,Denmark,CHE,Switzerland,60
+ITA,Italy,ISL,Iceland,59
+FRA,France,FIN,Finland,59
+USA,United States,CZE,Czechia,59
+GBR,United Kingdom,PRT,Portugal,58
+SWE,Sweden,DEU,Germany,58
+NLD,Netherlands,SWE,Sweden,58
+ITA,Italy,MEX,Mexico,58
+PYF,French Polynesia,USA,United States,57
+GRC,Greece,ESP,Spain,57
+USA,United States,IDN,Indonesia,56
+FRA,France,SVN,Slovenia,56
+NLD,Netherlands,ZAF,South Africa,56
+DEU,Germany,HRV,Croatia,55
+USA,United States,BRA,Brazil,55
+CAN,Canada,IRL,Ireland,55
+PRT,Portugal,GBR,United Kingdom,55
+GRC,Greece,ITA,Italy,54
+GLP,Guadeloupe,USA,United States,54
+USA,United States,HUN,Hungary,54
+DEU,Germany,AUS,Australia,54
+POL,Poland,ITA,Italy,54
+MAR,Morocco,MAR,Morocco,54
+COL,Colombia,ESP,Spain,54
+BEL,Belgium,DNK,Denmark,53
+NOR,Norway,ITA,Italy,53
+ESP,Spain,ZAF,South Africa,53
+MAR,Morocco,USA,United States,53
+ESP,Spain,COL,Colombia,52
+COL,Colombia,COL,Colombia,52
+GBR,United Kingdom,MEX,Mexico,52
+CAN,Canada,BEL,Belgium,52
+IRL,Ireland,NLD,Netherlands,52
+GRC,Greece,GRC,Greece,52
+ESP,Spain,TUR,Turkey,52
+AND,Andorra,FRA,France,52
+AUT,Austria,NLD,Netherlands,51
+MTQ,Martinique,CAN,Canada,51
+USA,United States,COL,Colombia,51
+SWE,Sweden,ITA,Italy,50
+PRT,Portugal,DEU,Germany,50
+HRV,Croatia,USA,United States,50
+FRA,France,AND,Andorra,50
+FRA,France,POL,Poland,50
+IRL,Ireland,DEU,Germany,50
+CAN,Canada,MTQ,Martinique,50
+USA,United States,PAN,Panama,49
+DEU,Germany,ISL,Iceland,49
+ITA,Italy,CZE,Czechia,49
+IDN,Indonesia,ESP,Spain,49
+ESP,Spain,THA,Thailand,49
+RUS,Russia Federation,ESP,Spain,49
+CAN,Canada,DEU,Germany,49
+FRA,France,TUR,Turkey,49
+HUN,Hungary,DEU,Germany,48
+ESP,Spain,CHL,Chile,48
+USA,United States,GRC,Greece,48
+CAN,Canada,NZL,New Zealand,48
+CRI,Costa Rica,CAN,Canada,48
+ISL,Iceland,DNK,Denmark,48
+ITA,Italy,SWE,Sweden,48
+CHE,Switzerland,DNK,Denmark,47
+CZE,Czechia,DEU,Germany,47
+IDN,Indonesia,CAN,Canada,47
+BEL,Belgium,GBR,United Kingdom,47
+POL,Poland,POL,Poland,46
+DEU,Germany,CZE,Czechia,46
+HUN,Hungary,AUT,Austria,46
+AUS,Australia,IRL,Ireland,46
+THA,Thailand,USA,United States,46
+NCL,New Caledonia,NCL,New Caledonia,46
+TUR,Turkey,FRA,France,45
+USA,United States,SWE,Sweden,45
+ITA,Italy,AUS,Australia,45
+DNK,Denmark,ISL,Iceland,44
+TUR,Turkey,USA,United States,44
+ISL,Iceland,ITA,Italy,44
+FRA,France,NCL,New Caledonia,44
+NCL,New Caledonia,AUS,Australia,43
+CAN,Canada,CHE,Switzerland,43
+GBR,United Kingdom,CHE,Switzerland,43
+IRL,Ireland,CAN,Canada,42
+USA,United States,BLZ,Belize,42
+NLD,Netherlands,IDN,Indonesia,42
+PAN,Panama,USA,United States,42
+USA,United States,ZAF,South Africa,42
+PRT,Portugal,BEL,Belgium,42
+BRA,Brazil,PRT,Portugal,41
+GBR,United Kingdom,BEL,Belgium,41
+DEU,Germany,NOR,Norway,41
+USA,United States,PYF,French Polynesia,40
+GBR,United Kingdom,ZAF,South Africa,40
+SEN,Senegal,FRA,France,40
+PRT,Portugal,BRA,Brazil,40
+AUS,Australia,NLD,Netherlands,40
+USA,United States,NOR,Norway,40
+POL,Poland,FRA,France,40
+AUS,Australia,DEU,Germany,39
+BEL,Belgium,CAN,Canada,39
+MAR,Morocco,BEL,Belgium,39
+DEU,Germany,NZL,New Zealand,39
+NLD,Netherlands,HUN,Hungary,39
+NOR,Norway,USA,United States,38
+BEL,Belgium,PRT,Portugal,38
+CHE,Switzerland,CAN,Canada,38
+GLP,Guadeloupe,ESP,Spain,38
+BRA,Brazil,ARG,Argentina,38
+NLD,Netherlands,NZL,New Zealand,37
+DEU,Germany,MEX,Mexico,37
+IDN,Indonesia,NZL,New Zealand,37
+DEU,Germany,ZAF,South Africa,37
+CHE,Switzerland,GBR,United Kingdom,37
+PRT,Portugal,CRI,Costa Rica,37
+DEU,Germany,GRC,Greece,37
+SVN,Slovenia,ITA,Italy,37
+NLD,Netherlands,MEX,Mexico,37
+HUN,Hungary,HRV,Croatia,37
+ISL,Iceland,ISL,Iceland,36
+ESP,Spain,NZL,New Zealand,36
+ESP,Spain,FIN,Finland,36
+NZL,New Zealand,ITA,Italy,36
+DNK,Denmark,BEL,Belgium,36
+NCL,New Caledonia,FRA,France,36
+MEX,Mexico,ITA,Italy,36
+USA,United States,DOM,Dominican Republic,36
+CZE,Czechia,AUT,Austria,35
+PRT,Portugal,MEX,Mexico,35
+DEU,Germany,IRL,Ireland,35
+ITA,Italy,IDN,Indonesia,35
+NZL,New Zealand,CAN,Canada,35
+THA,Thailand,FRA,France,35
+CHE,Switzerland,BEL,Belgium,35
+CZE,Czechia,USA,United States,35
+ITA,Italy,NOR,Norway,35
+FRA,France,CHL,Chile,35
+IDN,Indonesia,NLD,Netherlands,35
+FRA,France,ECU,Ecuador,34
+AUS,Australia,IDN,Indonesia,34
+CRI,Costa Rica,MEX,Mexico,34
+FRA,France,PER,Peru,34
+NLD,Netherlands,NOR,Norway,34
+IRL,Ireland,AUS,Australia,34
+ITA,Italy,MAR,Morocco,34
+BRA,Brazil,NLD,Netherlands,34
+THA,Thailand,ESP,Spain,33
+FIN,Finland,ESP,Spain,33
+ESP,Spain,SVN,Slovenia,33
+CRI,Costa Rica,ESP,Spain,33
+CRI,Costa Rica,FRA,France,33
+NZL,New Zealand,ESP,Spain,33
+DOM,Dominican Republic,USA,United States,33
+MLT,Malta,ESP,Spain,33
+CZE,Czechia,HRV,Croatia,32
+USA,United States,ISR,Israel,32
+BEL,Belgium,NOR,Norway,32
+ITA,Italy,SVN,Slovenia,32
+CAN,Canada,DNK,Denmark,32
+HUN,Hungary,GBR,United Kingdom,31
+NLD,Netherlands,CZE,Czechia,31
+USA,United States,VIR,"Virgin Islands, U.S.",31
+ITA,Italy,POL,Poland,30
+CAN,Canada,IDN,Indonesia,30
+DNK,Denmark,AUT,Austria,30
+BRA,Brazil,DEU,Germany,30
+RUS,Russia Federation,FRA,France,30
+ITA,Italy,ARG,Argentina,30
+NLD,Netherlands,CRI,Costa Rica,30
+NLD,Netherlands,GRC,Greece,30
+NLD,Netherlands,AUS,Australia,30
+FRA,France,DOM,Dominican Republic,29
+AUT,Austria,HRV,Croatia,29
+USA,United States,BHS,Bahamas,29
+TUN,Tunisia,FRA,France,29
+ARE,United Arab Emirates,FRA,France,29
+CAN,Canada,COL,Colombia,29
+AUS,Australia,CHE,Switzerland,29
+ZAF,South Africa,NLD,Netherlands,29
+NOR,Norway,DEU,Germany,29
+SVN,Slovenia,HRV,Croatia,28
+GBR,United Kingdom,DNK,Denmark,28
+NLD,Netherlands,HRV,Croatia,28
+DNK,Denmark,GBR,United Kingdom,28
+BEL,Belgium,SWE,Sweden,28
+MAR,Morocco,ITA,Italy,28
+ARE,United Arab Emirates,USA,United States,28
+HUN,Hungary,NLD,Netherlands,28
+ESP,Spain,ROU,Romania,28
+ARG,Argentina,CHL,Chile,27
+CHL,Chile,CHL,Chile,27
+USA,United States,THA,Thailand,27
+MEX,Mexico,GBR,United Kingdom,27
+NLD,Netherlands,IRL,Ireland,27
+HRV,Croatia,DEU,Germany,27
+PRT,Portugal,CAN,Canada,27
+ITA,Italy,CRI,Costa Rica,27
+GRC,Greece,DEU,Germany,27
+ARG,Argentina,MEX,Mexico,27
+ISL,Iceland,DEU,Germany,27
+POL,Poland,USA,United States,27
+CHE,Switzerland,PRT,Portugal,27
+MEX,Mexico,DEU,Germany,27
+BRA,Brazil,GBR,United Kingdom,26
+BRA,Brazil,CAN,Canada,26
+ITA,Italy,TUR,Turkey,26
+MAR,Morocco,CAN,Canada,26
+GUF,French Guiana,FRA,France,26
+SVN,Slovenia,FRA,France,26
+MYS,Malaysia,FRA,France,26
+KHM,Cambodia,ESP,Spain,26
+HRV,Croatia,HUN,Hungary,26
+ZAF,South Africa,ITA,Italy,26
+BGR,Bulgaria,FRA,France,26
+FRA,France,TUN,Tunisia,26
+IND,India,FRA,France,25
+BWA,Botswana,ZAF,South Africa,25
+SWE,Sweden,NLD,Netherlands,25
+CAN,Canada,GRC,Greece,25
+SGP,Singapore,FRA,France,25
+MTQ,Martinique,ITA,Italy,25
+ZAF,South Africa,ESP,Spain,25
+DEU,Germany,POL,Poland,25
+THA,Thailand,CAN,Canada,25
+AUT,Austria,DNK,Denmark,25
+GTM,Guatemala,USA,United States,25
+USA,United States,MAR,Morocco,25
+USA,United States,TUR,Turkey,24
+THA,Thailand,AUS,Australia,24
+CAN,Canada,ARG,Argentina,24
+CAN,Canada,ISL,Iceland,24
+USA,United States,CHL,Chile,24
+REU,Reunion,CAN,Canada,24
+USA,United States,ECU,Ecuador,24
+REU,Reunion,ESP,Spain,24
+MTQ,Martinique,GLP,Guadeloupe,24
+GBR,United Kingdom,GRC,Greece,24
+CHL,Chile,USA,United States,24
+VIR,"Virgin Islands, U.S.",USA,United States,24
+BRA,Brazil,MEX,Mexico,24
+DEU,Germany,HUN,Hungary,24
+FIN,Finland,FRA,France,23
+GRC,Greece,GBR,United Kingdom,23
+HUN,Hungary,AUS,Australia,23
+PRT,Portugal,CHE,Switzerland,23
+ESP,Spain,DOM,Dominican Republic,23
+GLP,Guadeloupe,MTQ,Martinique,23
+BGR,Bulgaria,ESP,Spain,23
+GBR,United Kingdom,ISL,Iceland,22
+ZAF,South Africa,GBR,United Kingdom,22
+POL,Poland,DEU,Germany,22
+AUT,Austria,HUN,Hungary,22
+FRA,France,PAN,Panama,22
+FIN,Finland,FIN,Finland,22
+IRL,Ireland,PRT,Portugal,22
+THA,Thailand,ITA,Italy,22
+ESP,Spain,ISR,Israel,22
+HRV,Croatia,AUT,Austria,22
+ISL,Iceland,GBR,United Kingdom,22
+CAN,Canada,BRA,Brazil,21
+CAN,Canada,HRV,Croatia,21
+REU,Reunion,ZAF,South Africa,21
+GRC,Greece,USA,United States,21
+ABW,Aruba,USA,United States,21
+SVN,Slovenia,ESP,Spain,21
+PRT,Portugal,IDN,Indonesia,21
+USA,United States,GTM,Guatemala,21
+ITA,Italy,BRA,Brazil,21
+CRI,Costa Rica,ITA,Italy,21
+ECU,Ecuador,USA,United States,21
+HUN,Hungary,PRT,Portugal,21
+USA,United States,ABW,Aruba,21
+FRA,France,SEN,Senegal,21
+FRA,France,JPN,Japan,21
+IRL,Ireland,DNK,Denmark,20
+FRA,France,CYP,Cyprus,20
+GBR,United Kingdom,CRI,Costa Rica,20
+CAN,Canada,PAN,Panama,20
+BRA,Brazil,CHE,Switzerland,20
+BHS,Bahamas,USA,United States,20
+AUT,Austria,PRT,Portugal,20
+FRA,France,GUF,French Guiana,20
+JPN,Japan,FRA,France,20
+DNK,Denmark,HUN,Hungary,20
+PYF,French Polynesia,NZL,New Zealand,20
+NLD,Netherlands,THA,Thailand,20
+DEU,Germany,THA,Thailand,20
+MTQ,Martinique,MTQ,Martinique,20
