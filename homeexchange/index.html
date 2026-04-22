@@ -3,259 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HomeExchange Churn Analysis — Tamás Imre</title>
-  <meta name="description" content="End-to-end churn analysis for a home-swap travel platform using SQL, BigQuery, and customer segmentation." />
-  <link rel="stylesheet" href="../style.css" />
+  <title>Covid Impact on Exchange Travel Patterns — HomeExchange</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    body { background: #fafaf8; }
+    .chart-wrap { background: #fff; border: 0.5px solid #e8e6e0; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; }
+    .chart-title { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .chart-sub { font-family: 'DM Sans', sans-serif; font-size: 13px; color: #5c5a54; font-weight: 300; margin-bottom: 1.25rem; }
+    .annotation-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .ann { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 2px; }
+    .ann-covid { background: #fff0f0; color: #a32d2d; }
+    .ann-recovery { background: #e6f3e6; color: #1a5c1a; }
+    .ann-new { background: #faeeda; color: #7a4f00; }
+    .stat-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; border: 0.5px solid #e8e6e0; border-radius: 8px; overflow: hidden; margin-top: 1.5rem; }
+    .stat { background: #fff; padding: 0.9rem 1rem; }
+    .stat-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #9c9a94; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .stat-val { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+    .stat-desc { font-size: 11px; color: #5c5a54; font-weight: 300; margin-top: 2px; }
+    .red { color: #a32d2d; }
+    .green { color: #1a5c1a; }
+    .amber { color: #7a4f00; }
+  </style>
 </head>
 <body>
-
 <nav>
   <div class="nav-inner">
     <a href="/" class="nav-logo mono">tamás imre</a>
     <ul class="nav-links">
       <li><a href="/#projects">projects</a></li>
-      <li><a href="/#experience">experience</a></li>
-      <li><a href="/#skills">skills</a></li>
+      <li><a href="/homeexchange/">homeexchange</a></li>
       <li><a href="mailto:imre.tamas@gmail.com">contact</a></li>
     </ul>
   </div>
 </nav>
 
-<div class="container">
-  <a href="/" class="back-link">← back to portfolio</a>
+<div class="container" style="padding-top:2rem; padding-bottom:4rem;">
 
-  <!-- Project hero -->
+  <a href="/homeexchange/" class="back-link">← back to homeexchange</a>
+
   <section class="project-hero fade-up">
-    <p class="project-hero-meta">Le Wagon Bootcamp · 2025 · In progress</p>
-    <h1><strong>HomeExchange</strong><br>Churn Analysis</h1>
+    <p class="project-hero-meta">HomeExchange · Travel Behaviour Analysis · 2019–2022</p>
+    <h1><strong>Covid-19</strong> impact on<br>exchange travel patterns</h1>
     <p class="project-hero-desc">
-      HomeExchange is a home-swap travel platform where members pay an annual fee of €149 to access peer-to-peer house exchanges. The goal of this project is to understand why members do not renew their subscription and identify actionable levers to reduce churn.
+      Monthly analysis of domestic, continental, and intercontinental exchanges reveals the precise moment Covid-19 restrictions hit — and tracks the slow recovery back toward pre-pandemic travel patterns.
     </p>
-    <div class="tag-row">
-      <span class="tag chip-sql" style="background:var(--blue-bg);color:var(--blue-text);">SQL</span>
-      <span class="tag chip-bq" style="background:var(--amber-bg);color:var(--amber-text);">BigQuery</span>
-      <span class="tag chip-bi" style="background:var(--purple-bg);color:var(--purple-text);">Looker</span>
-      <span class="tag">Churn Modelling</span>
-      <span class="tag">Customer Segmentation</span>
+  </section>
+
+  <!-- Key stats -->
+  <div class="stat-row fade-up">
+    <div class="stat">
+      <div class="stat-label">Pre-Covid domestic (2019 avg)</div>
+      <div class="stat-val amber">40%</div>
+      <div class="stat-desc">of all completed exchanges</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Peak Covid domestic (May 2020)</div>
+      <div class="stat-val red">83.5%</div>
+      <div class="stat-desc">highest point in dataset</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Post-Covid domestic (2022 avg)</div>
+      <div class="stat-val green">48%</div>
+      <div class="stat-desc">recovering but still elevated</div>
+    </div>
+  </div>
+
+  <!-- Main chart -->
+  <section class="section fade-up">
+    <div class="section-label">Monthly travel type breakdown</div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Exchange travel type — % of monthly completed exchanges</div>
+      <div class="chart-sub">Domestic · Continental · Intercontinental · Jan 2019 – Nov 2022</div>
+      <div class="annotation-row">
+        <span class="ann ann-covid">Mar 2020 — first lockdowns</span>
+        <span class="ann ann-covid">Feb 2021 — second wave peak (82.1% domestic)</span>
+        <span class="ann ann-recovery">Jun 2021 — first recovery signs</span>
+        <span class="ann ann-new">2022 — new normal ~48% domestic</span>
+      </div>
+      <canvas id="travelChart" style="max-height:180px;"></canvas>
     </div>
   </section>
 
-  <!-- Stats -->
+  <!-- Findings -->
   <section class="section fade-up">
-    <div class="section-label">Project at a glance</div>
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-label">Tables</div>
-        <div class="stat-value">2</div>
-        <div class="stat-sub">Subscriptions · Exchanges</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Data from</div>
-        <div class="stat-value">2019</div>
-        <div class="stat-sub">through 2022</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Duplicates found</div>
-        <div class="stat-value">276</div>
-        <div class="stat-sub">resolved via dedup CTE</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Churn driver</div>
-        <div class="stat-value">renew</div>
-        <div class="stat-sub">0 = churned · 1 = renewed</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Context -->
-  <section class="section fade-up">
-    <div class="section-label">Business context</div>
-    <div class="content-block">
-      <h2>How HomeExchange works</h2>
-      <p>Registration is free. The €149 annual membership only applies once a member secures their first exchange. This creates a distinct behavioural split: some users subscribe and never exchange (particularly American users), while European users tend to validate the system before committing.</p>
-      <p>This cultural difference is a key variable in the churn analysis — churn drivers are not uniform across geographies.</p>
-    </div>
-
+    <div class="section-label">Key findings</div>
     <div class="finding-grid">
       <div class="finding-card">
-        <div class="finding-title">Potential churn drivers</div>
-        <div class="finding-text">User tenure · guest &amp; host activity · house location · sponsorship · promotional discounts</div>
+        <div class="finding-title">Lockdown impact — immediate</div>
+        <div class="finding-text">Domestic share jumped from 41% in Feb 2020 to 72% by April 2020 — within just 6 weeks of the first restrictions</div>
       </div>
       <div class="finding-card">
-        <div class="finding-title">American users</div>
-        <div class="finding-text">Often subscribe without an immediate exchange — higher risk of early churn</div>
+        <div class="finding-title">Intercontinental — near zero</div>
+        <div class="finding-text">Intercontinental exchanges collapsed to just 3.2% in June 2020 — from a pre-Covid baseline of ~24%</div>
       </div>
       <div class="finding-card">
-        <div class="finding-title">European users</div>
-        <div class="finding-text">Tend to validate the system before subscribing — lower early churn but price-sensitive on renewal</div>
+        <div class="finding-title">Second wave — Feb 2021</div>
+        <div class="finding-text">Domestic peaked again at 82.1% in February 2021 as European countries re-entered lockdown</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Permanent behavioural shift</div>
+        <div class="finding-text">By end of 2022, domestic exchanges stabilised at ~48-50% — higher than the pre-Covid 40% baseline, suggesting lasting behaviour change</div>
       </div>
     </div>
-  </section>
-
-  <!-- Data model -->
-  <section class="section fade-up">
-    <div class="section-label">Data model</div>
-    <div class="content-block">
-      <h2>Two source tables</h2>
-      <p>The <strong>subscriptions</strong> table contains one row per subscription event per user. Users who renew appear multiple times. The <strong>exchanges</strong> table contains conversation and exchange records — including reciprocal exchanges, which require careful counting to avoid double-counting.</p>
-    </div>
-
-    <div class="content-block">
-      <h2>Key data quality issues found</h2>
-      <ul>
-        <li>276 duplicate rows in the subscriptions table (same user, same subscription year)</li>
-        <li>Inconsistent <code>home_type</code> casing — "Home" vs "apartment"</li>
-        <li>Null values in <code>country</code>, <code>region</code>, <code>city</code> across both tables</li>
-        <li>Reciprocal exchanges create two exchange rows per conversation — requires deduplication logic</li>
-        <li><code>guest_count = 0</code> on several exchange rows despite completed exchanges</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- SQL: dedup -->
-  <section class="section fade-up">
-    <div class="section-label">Data cleaning — subscriptions</div>
-    <div class="content-block">
-      <h2>Deduplicated customer view</h2>
-      <p>The core challenge was normalising multiple subscription rows per user into a single customer record, preserving all relevant history. The query below produces one row per customer with engineered tenure, churn, and segment features.</p>
-    </div>
-
-    <div class="code-block">
-      <div class="code-block-label">BigQuery SQL · customer_base.sql</div>
-      <pre><span class="code-kw">WITH</span> sub <span class="code-kw">AS</span> (
-  <span class="code-kw">SELECT</span>
-    user_id,
-    first_subscription_date        <span class="code-kw">AS</span> start_subscription_date,
-    <span class="code-fn">MIN</span>(subscription_date)          <span class="code-kw">AS</span> first_filed_subscription_date,
-    <span class="code-fn">MAX</span>(subscription_date)          <span class="code-kw">AS</span> last_subscription_date,
-    <span class="code-fn">MAX</span>(referral)                   <span class="code-kw">AS</span> total_referrals,
-    <span class="code-fn">SUM</span>(promotion)                  <span class="code-kw">AS</span> total_promotions,
-    <span class="code-fn">MAX</span>(payment3x)                  <span class="code-kw">AS</span> ever_used_payment3x,
-    <span class="code-fn">COUNT</span>(<span class="code-kw">DISTINCT</span> <span class="code-fn">EXTRACT</span>(
-      <span class="code-kw">YEAR FROM</span> subscription_date))  <span class="code-kw">AS</span> total_renewals_raw,
-    country, region, department, city
-  <span class="code-kw">FROM</span> home_exchange.subscriptions
-  <span class="code-kw">GROUP BY</span>
-    user_id, first_subscription_date,
-    country, region, department, city
-)
-
-<span class="code-kw">SELECT</span>
-  user_id,
-  start_subscription_date,
-  first_filed_subscription_date,
-  last_subscription_date,
-  total_referrals,
-  total_promotions,
-  ever_used_payment3x,
-
-  <span class="code-cm">-- Tenure: years as a member</span>
-  <span class="code-fn">DATE_DIFF</span>(
-    <span class="code-fn">DATE</span>(last_subscription_date),
-    <span class="code-fn">DATE</span>(start_subscription_date), <span class="code-kw">YEAR</span>
-  ) <span class="code-kw">AS</span> tenure_years,
-
-  <span class="code-cm">-- Renewals: years active minus starting year</span>
-  <span class="code-fn">DATE_DIFF</span>(
-    <span class="code-fn">DATE</span>(last_subscription_date),
-    <span class="code-fn">DATE</span>(first_filed_subscription_date), <span class="code-kw">YEAR</span>
-  ) <span class="code-kw">AS</span> total_renewals,
-
-  <span class="code-cm">-- Churn flag: no renewal in past 13 months</span>
-  <span class="code-kw">CASE</span>
-    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(
-      <span class="code-fn">CURRENT_DATE</span>(),
-      <span class="code-fn">DATE</span>(last_subscription_date), <span class="code-kw">MONTH</span>
-    ) > <span class="code-nu">13</span> <span class="code-kw">THEN</span> <span class="code-nu">1</span>
-    <span class="code-kw">ELSE</span> <span class="code-nu">0</span>
-  <span class="code-kw">END AS</span> is_churned,
-
-  <span class="code-cm">-- Tenure bucket for segmentation</span>
-  <span class="code-kw">CASE</span>
-    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(..., <span class="code-kw">YEAR</span>) = <span class="code-nu">0</span>
-      <span class="code-kw">THEN</span> <span class="code-st">'0 – New'</span>
-    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(..., <span class="code-kw">YEAR</span>) <span class="code-kw">BETWEEN</span> <span class="code-nu">1</span> <span class="code-kw">AND</span> <span class="code-nu">2</span>
-      <span class="code-kw">THEN</span> <span class="code-st">'1–2 years'</span>
-    <span class="code-kw">WHEN</span> <span class="code-fn">DATE_DIFF</span>(..., <span class="code-kw">YEAR</span>) <span class="code-kw">BETWEEN</span> <span class="code-nu">3</span> <span class="code-kw">AND</span> <span class="code-nu">5</span>
-      <span class="code-kw">THEN</span> <span class="code-st">'3–5 years'</span>
-    <span class="code-kw">ELSE</span> <span class="code-st">'6+ years'</span>
-  <span class="code-kw">END AS</span> tenure_bucket,
-
-  country, region, department, city
-<span class="code-kw">FROM</span> sub</pre>
-    </div>
-
-    <div class="content-block">
-      <h2>Why this approach</h2>
-      <ul>
-        <li><code>MAX(referral)</code> — if a user was ever referred, flag it regardless of which year</li>
-        <li><code>SUM(promotion)</code> — captures total promotions received across all subscriptions</li>
-        <li><code>DATE_DIFF(..., YEAR)</code> replaces a fragile <code>CASE WHEN EXTRACT(year) = 2021</code> fix — works correctly for all cohorts</li>
-        <li>13-month churn threshold accounts for annual billing + grace period</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- Analysis pages -->
-  <section class="section fade-up">
-    <div class="section-label">Analysis</div>
-    <div class="projects-grid">
-
-      <a href="covid-travel/" class="project-card featured">
-        <div class="project-top">
-          <div>
-            <div class="project-title">Covid-19 impact on travel patterns</div>
-            <div class="project-org mono">Monthly breakdown · 2019–2022</div>
-          </div>
-          <span class="project-arrow">↗</span>
-        </div>
-        <p class="project-desc">
-          Domestic exchanges surged from 40% to 83.5% during peak Covid restrictions. Month-by-month analysis pinpoints the exact moment lockdowns hit and tracks the slow recovery toward pre-pandemic patterns.
-        </p>
-        <div class="chip-row">
-          <span class="chip chip-sql">SQL</span>
-          <span class="chip chip-bq">BigQuery</span>
-          <span class="chip chip-default">Travel Behaviour</span>
-          <span class="chip chip-default">Covid Analysis</span>
-        </div>
-      </a>
-
-      <div class="project-card" style="cursor:default;">
-        <div class="project-top">
-          <div>
-            <div class="project-title">Churn by customer segment</div>
-            <div class="project-org mono">In progress</div>
-          </div>
-        </div>
-        <p class="project-desc">
-          New customers churn at 56.6% — the highest of any segment. Second year is the crucial turning point. Analysis of what drives retention beyond year one.
-        </p>
-        <div class="chip-row">
-          <span class="chip chip-sql">SQL</span>
-          <span class="chip chip-default">Churn Modelling</span>
-          <span class="chip chip-default">Segmentation</span>
-        </div>
-      </div>
-
-      <div class="project-card" style="cursor:default;">
-        <div class="project-top">
-          <div>
-            <div class="project-title">Geographic churn — US vs Europe</div>
-            <div class="project-org mono">In progress</div>
-          </div>
-        </div>
-        <p class="project-desc">
-          Americans often subscribe without an immediate exchange — does this translate to higher churn? Continent-level analysis of retention behaviour.
-        </p>
-        <div class="chip-row">
-          <span class="chip chip-sql">SQL</span>
-          <span class="chip chip-default">Geography</span>
-          <span class="chip chip-default">Churn</span>
-        </div>
-      </div>
-
-    </div>
-    <p style="font-size:13px;color:var(--text-tertiary);font-family:'DM Mono',monospace;margin-top:1rem;">Analysis ongoing — new findings added as the project develops.</p>
   </section>
 
 </div>
@@ -263,19 +114,134 @@
 <footer>
   <div class="footer-inner">
     <div class="contact-links">
-      <a href="mailto:imre.tamas@gmail.com" class="contact-link">
-        <span class="contact-dot"></span> imre.tamas@gmail.com
-      </a>
-      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank" rel="noopener">
-        <span class="contact-dot"></span> LinkedIn
-      </a>
-      <a href="https://github.com/imrepocok" class="contact-link" target="_blank" rel="noopener">
-        <span class="contact-dot"></span> GitHub
-      </a>
+      <a href="mailto:imre.tamas@gmail.com" class="contact-link"><span class="contact-dot"></span> imre.tamas@gmail.com</a>
+      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank"><span class="contact-dot"></span> LinkedIn</a>
+      <a href="https://github.com/imrepocok" class="contact-link" target="_blank"><span class="contact-dot"></span> GitHub</a>
     </div>
     <span class="footer-copy mono">Berlin, Germany</span>
   </div>
 </footer>
 
+<script>
+const data = [
+  {m:"2019-01",D:29.6,C:41.5,I:28.9},{m:"2019-02",D:34.5,C:41.9,I:23.6},
+  {m:"2019-03",D:33.4,C:42.0,I:24.6},{m:"2019-04",D:36.9,C:38.7,I:24.4},
+  {m:"2019-05",D:37.5,C:38.3,I:24.3},{m:"2019-06",D:36.4,C:38.1,I:25.6},
+  {m:"2019-07",D:41.3,C:34.7,I:24.0},{m:"2019-08",D:41.5,C:34.7,I:23.8},
+  {m:"2019-09",D:48.6,C:31.5,I:20.0},{m:"2019-10",D:48.1,C:32.4,I:19.5},
+  {m:"2019-11",D:47.4,C:31.8,I:20.8},{m:"2019-12",D:49.4,C:30.4,I:20.2},
+  {m:"2020-01",D:52.6,C:31.1,I:16.3},{m:"2020-02",D:58.7,C:26.3,I:15.0},
+  {m:"2020-03",D:60.2,C:20.1,I:19.7},{m:"2020-04",D:72.4,C:11.7,I:15.9},
+  {m:"2020-05",D:83.5,C:12.7,I:3.8},{m:"2020-06",D:71.1,C:25.7,I:3.2},
+  {m:"2020-07",D:72.0,C:23.4,I:4.7},{m:"2020-08",D:74.5,C:20.0,I:5.4},
+  {m:"2020-09",D:78.5,C:15.5,I:5.9},{m:"2020-10",D:80.2,C:12.8,I:7.0},
+  {m:"2020-11",D:75.0,C:13.7,I:11.3},{m:"2020-12",D:75.8,C:14.3,I:9.9},
+  {m:"2021-01",D:75.4,C:16.9,I:7.6},{m:"2021-02",D:82.1,C:13.2,I:4.7},
+  {m:"2021-03",D:78.1,C:15.6,I:6.4},{m:"2021-04",D:73.2,C:20.4,I:6.3},
+  {m:"2021-05",D:66.5,C:26.2,I:7.3},{m:"2021-06",D:60.0,C:30.8,I:9.2},
+  {m:"2021-07",D:61.7,C:28.7,I:9.7},{m:"2021-08",D:60.4,C:28.7,I:11.0},
+  {m:"2021-09",D:57.6,C:29.1,I:13.3},{m:"2021-10",D:55.7,C:29.1,I:15.2},
+  {m:"2021-11",D:53.6,C:27.5,I:18.9},{m:"2021-12",D:56.9,C:28.2,I:15.0},
+  {m:"2022-01",D:50.4,C:33.4,I:16.2},{m:"2022-02",D:47.4,C:35.0,I:17.6},
+  {m:"2022-03",D:48.2,C:34.3,I:17.6},{m:"2022-04",D:47.2,C:34.3,I:18.5},
+  {m:"2022-05",D:46.4,C:36.1,I:17.5},{m:"2022-06",D:46.3,C:35.6,I:18.1},
+  {m:"2022-07",D:46.8,C:33.7,I:19.5},{m:"2022-08",D:47.0,C:32.4,I:20.6},
+  {m:"2022-09",D:50.4,C:31.0,I:18.6},{m:"2022-10",D:50.8,C:30.2,I:19.0},
+  {m:"2022-11",D:50.6,C:30.4,I:19.0}
+];
+
+const labels = data.map(d => d.m);
+const covidStart = labels.indexOf('2020-03');
+const covidPeak  = labels.indexOf('2020-05');
+const wave2      = labels.indexOf('2021-02');
+
+const ctx = document.getElementById('travelChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Domestic',
+        data: data.map(d => d.D),
+        borderColor: '#1a1916',
+        backgroundColor: 'rgba(26,25,22,0.06)',
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0.3,
+        fill: false
+      },
+      {
+        label: 'Continental',
+        data: data.map(d => d.C),
+        borderColor: '#185FA5',
+        backgroundColor: 'rgba(24,95,165,0.06)',
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0.3,
+        fill: false
+      },
+      {
+        label: 'Intercontinental',
+        data: data.map(d => d.I),
+        borderColor: '#854F0B',
+        backgroundColor: 'rgba(133,79,11,0.06)',
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0.3,
+        fill: false
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          font: { family: "'DM Mono', monospace", size: 11 },
+          padding: 16,
+          boxWidth: 24
+        }
+      },
+      tooltip: {
+        backgroundColor: '#1a1916',
+        titleFont: { family: "'DM Mono', monospace", size: 11 },
+        bodyFont: { family: "'DM Mono', monospace", size: 11 },
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`
+        }
+      },
+      annotation: {}
+    },
+    scales: {
+      x: {
+        ticks: {
+          font: { family: "'DM Mono', monospace", size: 10 },
+          maxRotation: 45,
+          color: '#9c9a94',
+          callback: function(val, idx) {
+            const m = labels[idx];
+            return m.endsWith('-01') ? m.slice(0,4) : '';
+          }
+        },
+        grid: { color: '#f0ede8' }
+      },
+      y: {
+        min: 0,
+        max: 100,
+        ticks: {
+          font: { family: "'DM Mono', monospace", size: 10 },
+          color: '#9c9a94',
+          callback: v => v + '%'
+        },
+        grid: { color: '#f0ede8' }
+      }
+    }
+  }
+});
+</script>
 </body>
 </html>
