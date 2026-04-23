@@ -188,8 +188,16 @@ nav {
 .project-card:last-child { border-bottom: none; }
 .project-card:hover { background: #f5f3ef; }
 
-.project-card.featured {
-  border-left: 3px solid var(--text-primary);
+.project-card.accent-1 {
+  border-left: 3px solid #185FA5;
+}
+
+.project-card.accent-2 {
+  border-left: 3px solid #9FE1CB;
+}
+
+.project-card.accent-3 {
+  border-left: 3px solid #e8e6e0;
 }
 
 .project-top {
@@ -470,7 +478,8 @@ footer {
 
 /* Collapsible code block */
 .code-block {
-  background: #1a1916;
+  background: #f5f3ef;
+  border: 0.5px solid var(--border);
   border-radius: 8px;
   margin: 1rem 0 1.5rem;
   overflow: hidden;
@@ -483,23 +492,23 @@ footer {
   padding: 0.9rem 1.5rem;
   cursor: pointer;
   user-select: none;
-  border-bottom: 0.5px solid #2c2c28;
+  border-bottom: 0.5px solid var(--border);
 }
 
-.code-block-toggle:hover { background: #222220; }
+.code-block-toggle:hover { background: #ede9e3; }
 
 .code-block-label {
   font-family: 'DM Mono', monospace;
   font-size: 10px;
   letter-spacing: 0.08em;
-  color: #888;
+  color: var(--text-tertiary);
   text-transform: uppercase;
 }
 
 .code-block-chevron {
   font-family: 'DM Mono', monospace;
   font-size: 11px;
-  color: #666;
+  color: var(--text-tertiary);
   transition: transform 0.2s;
 }
 
@@ -517,10 +526,17 @@ footer {
   font-family: 'DM Mono', monospace;
   font-size: 12px;
   line-height: 1.8;
-  color: #e8e4dc;
+  color: var(--text-primary);
   white-space: pre;
   margin: 0;
 }
+
+/* Syntax colours for light background */
+.code-kw { color: #185FA5; }
+.code-fn { color: #0F6E56; }
+.code-st { color: #7a4f00; }
+.code-nu { color: #3d2a9e; }
+.code-cm { color: var(--text-tertiary); font-style: italic; }
 
 .code-kw { color: #91bfff; }
 .code-fn { color: #ffd580; }
