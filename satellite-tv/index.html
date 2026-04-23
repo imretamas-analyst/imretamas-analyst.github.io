@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Satellite TV Targeting — Tamás Imre</title>
-  <meta name="description" content="Geospatial market analysis identifying high-potential satellite TV expansion markets across Hungary." />
+  <title>Satellite TV Customer Targeting — Tamás Imre</title>
+  <meta name="description" content="Geospatial market analysis that revitalised satellite TV sales across 3,000+ Hungarian settlements using MapInfo, SQL Server and commercial statistical data." />
   <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
@@ -21,121 +21,138 @@
   </div>
 </nav>
 
-<div class="container">
+<div class="container" style="padding-bottom:4rem;">
   <a href="/" class="back-link">← back to portfolio</a>
 
   <section class="project-hero fade-up">
-    <p class="project-hero-meta">UPC Broadband · Budapest · 2007</p>
+    <p class="project-hero-meta">UPC Direct · Hungary · 2007</p>
     <h1><strong>Satellite TV</strong><br>Customer Targeting Analysis</h1>
     <p class="project-hero-desc">
-      Built a geospatial analysis to identify high-potential markets for satellite TV expansion across 3,000+ Hungarian settlements — combining competitor coverage data, household income, and existing customer locations into strategic heatmaps.
+      When organic satellite TV growth stalled after a record first year, management asked me to find out why — and what to do next.
+      The answer was a geospatial analysis across 3,000+ Hungarian settlements that became the first customer heatmap management had ever seen,
+      and a sales dashboard that revitalised acquisition by focusing the team on the highest-potential underserved areas.
     </p>
     <div class="tag-row">
       <span class="tag">SQL Server</span>
       <span class="tag">MapInfo</span>
       <span class="tag">Geospatial Analysis</span>
+      <span class="tag">Web Scraping</span>
       <span class="tag">Market Expansion</span>
     </div>
   </section>
 
+  <!-- Stats -->
+  <div class="stat-grid fade-up">
+    <div class="stat-card">
+      <div class="stat-label">Settlements analysed</div>
+      <div class="stat-value">3,000+</div>
+      <div class="stat-sub">across Hungary</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Data sources</div>
+      <div class="stat-value">4</div>
+      <div class="stat-sub">merged into one model</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Tools</div>
+      <div class="stat-value">SQL</div>
+      <div class="stat-sub">SQL Server · MapInfo</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Year</div>
+      <div class="stat-value">2007</div>
+      <div class="stat-sub">before modern BI tools</div>
+    </div>
+  </div>
+
+  <!-- Context -->
   <section class="section fade-up">
-    <div class="section-label">Project at a glance</div>
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-label">Settlements analysed</div>
-        <div class="stat-value">3,000+</div>
-        <div class="stat-sub">across Hungary</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Data sources</div>
-        <div class="stat-value">3</div>
-        <div class="stat-sub">merged via SQL</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Tools</div>
-        <div class="stat-value">SQL</div>
-        <div class="stat-sub">SQL Server · MapInfo</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Outcome</div>
-        <div class="stat-value">Growth</div>
-        <div class="stat-sub">revitalised subscription</div>
-      </div>
+    <div class="section-label">Context</div>
+    <div class="content-block">
+      <h2>A new product with a massive untapped market</h2>
+      <p>UPC was a leading Hungarian telco providing TV, internet and landline through cable networks — but only in mid-size and large cities like Budapest, Debrecen and Miskolc. For the rest of Hungary, the options were limited: a local provider with a reduced channel lineup, or satellite with no Hungarian channels at all.</p>
+      <p>UPC Direct was established to fill this gap — offering the same wide channel selection including Hungarian channels, delivered via satellite to any address in the country. In the first 12 months, demand was overwhelming. Customers waited 2–3 weeks for installation. The question wasn't where to sell — it was whether there were enough technicians and receivers to keep up.</p>
+    </div>
+    <div class="content-block">
+      <h2>Then growth stalled</h2>
+      <p>After roughly a year, acquisition started to slow. The easy wins had been captured. Management asked me to analyse the situation — why was growth declining, and where should the sales team focus next?</p>
     </div>
   </section>
 
+  <!-- Approach -->
   <section class="section fade-up">
-    <div class="section-label">Problem</div>
+    <div class="section-label">Approach — step by step</div>
+
     <div class="content-block">
-      <h2>Finding underserved markets before competitors did</h2>
-      <p>UPC Broadband needed to expand satellite TV coverage but had limited budget to target all settlements equally. The challenge was identifying which areas had the highest potential — high household income, low competitor presence, and proximity to existing customers — without expensive field research.</p>
-      <p>This was an early-stage data-driven project in 2007, when the tooling was limited and the approach had to be built from scratch.</p>
-    </div>
-  </section>
-
-  <section class="section fade-up">
-    <div class="section-label">Approach</div>
-    <div class="content-block">
-      <h2>Integrating three data sources</h2>
-      <ul>
-        <li>Competitor cable coverage maps — scraped and geocoded by settlement</li>
-        <li>Household income data — sourced from public statistical records</li>
-        <li>Existing UPC customer locations — from internal CRM database</li>
-      </ul>
-    </div>
-
-    <div class="code-block">
-      <div class="code-block-label">SQL Server · settlement_scoring.sql</div>
-      <pre><span class="code-cm">-- Score each settlement by expansion potential</span>
-<span class="code-kw">SELECT</span>
-  s.settlement_id,
-  s.settlement_name,
-  s.county,
-  s.population,
-  i.avg_household_income,
-  c.competitor_coverage_pct,
-  <span class="code-fn">COUNT</span>(cu.customer_id)       <span class="code-kw">AS</span> existing_customers,
-
-  <span class="code-cm">-- Composite score: high income, low competition, existing base</span>
-  (i.avg_household_income / <span class="code-nu">1000</span>)
-    * (<span class="code-nu">1</span> - c.competitor_coverage_pct)
-    * <span class="code-fn">LOG</span>(<span class="code-fn">COUNT</span>(cu.customer_id) + <span class="code-nu">1</span>)
-                              <span class="code-kw">AS</span> expansion_score
-
-<span class="code-kw">FROM</span> settlements s
-<span class="code-kw">LEFT JOIN</span> income_data i
-  <span class="code-kw">ON</span> s.settlement_id = i.settlement_id
-<span class="code-kw">LEFT JOIN</span> competitor_coverage c
-  <span class="code-kw">ON</span> s.settlement_id = c.settlement_id
-<span class="code-kw">LEFT JOIN</span> customers cu
-  <span class="code-kw">ON</span> s.settlement_id = cu.settlement_id
-<span class="code-kw">GROUP BY</span>
-  s.settlement_id, s.settlement_name, s.county,
-  s.population, i.avg_household_income,
-  c.competitor_coverage_pct
-<span class="code-kw">ORDER BY</span> expansion_score <span class="code-kw">DESC</span></pre>
+      <h2>Step 1 — Put the customers on a map</h2>
+      <p>When UPC operated only 12–15 franchise cities, a simple table of KPIs was enough. But UPC Direct could serve anywhere in Hungary — 3,000+ settlements, sometimes a single house in a field. A table was useless. I needed to visualise the data spatially.</p>
+      <p>The engineering team used a GIS application called MapInfo. I learned it, exported our customer database from SQL Server, and geocoded every subscriber by settlement. The result was the first customer heatmap management had ever seen. When I presented it, the reaction was immediate — they could see for the first time how customers were distributed across the country, where the density was high and where it dropped off completely.</p>
     </div>
 
     <div class="content-block">
-      <h2>Visualisation in MapInfo</h2>
-      <p>The scored settlements were exported and visualised as a heatmap in MapInfo, layered over competitor coverage boundaries. This allowed the sales team to visually identify clusters of high-potential, underserved markets and plan targeted field campaigns.</p>
+      <h2>Step 2 — Map the competition</h2>
+      <p>Not all low-density areas were equally worth targeting. Some had local cable operators — small providers offering limited channels — which made acquisition harder. I collected competitor coverage data through a combination of web scraping their service area pages and asking our field technicians who knew the local landscape. This competitive layer was added to the map, making it immediately clear which areas were genuinely underserved versus just sparse.</p>
     </div>
-  </section>
 
-  <section class="section fade-up">
-    <div class="section-label">Outcome</div>
+    <div class="content-block">
+      <h2>Step 3 — Add purchasing power data</h2>
+      <p>Our marketing department had a relationship with a commercial data provider that sold statistical datasets at the city level — average household income, average spending on culture (TV, cinema, theatre), average spending on media. I purchased the relevant subset and joined it to the settlement data. The key metric was average household income — a strong proxy for willingness to pay for a premium satellite subscription.</p>
+    </div>
+
+    <div class="content-block">
+      <h2>Step 4 — Score and prioritise</h2>
+      <p>With all four data sources combined — existing customers, competitor coverage, household income, and settlement geography — I built a composite scoring model. The target profile was clear: areas where penetration was below average, household income was above average, and no competitor cable network was present.</p>
+    </div>
+
     <div class="finding-grid">
       <div class="finding-card">
-        <div class="finding-title">Targeted campaigns</div>
-        <div class="finding-text">Sales team focused resources on top-scored settlements rather than blanket outreach</div>
+        <div class="finding-title">Low penetration</div>
+        <div class="finding-text">Fewer existing subscribers relative to the settlement's population — indicating untapped potential</div>
       </div>
       <div class="finding-card">
-        <div class="finding-title">Subscription growth</div>
-        <div class="finding-text">Identified high-potential underserved markets revitalised subscription growth in targeted regions</div>
+        <div class="finding-title">High income</div>
+        <div class="finding-text">Above-average household income — stronger willingness to pay for a premium satellite subscription</div>
       </div>
       <div class="finding-card">
-        <div class="finding-title">Early data-driven culture</div>
-        <div class="finding-text">Demonstrated the value of combining multiple data sources for strategic decisions — rare in 2007</div>
+        <div class="finding-title">No cable competitor</div>
+        <div class="finding-text">No local cable operator present — satellite was the only meaningful TV option available</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Geographic clustering</div>
+        <div class="finding-text">High-scoring settlements grouped together for efficient field sales routing</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section class="section fade-up">
+    <div class="section-label">From analysis to daily tool</div>
+    <div class="content-block">
+      <h2>A dashboard the sales team used every day</h2>
+      <p>The scoring model became a live MapInfo dashboard. Sales representatives could select a geographic area on the map and instantly see a ranked list of all settlements within it — scored by expansion potential. Rather than working from intuition or revisiting the same areas, the team could plan routes around clusters of high-scoring settlements they hadn't yet fully penetrated.</p>
+      <p>This turned a one-off analysis into a repeatable daily workflow. Acquisition started to recover. I cannot put an exact number on the uplift after nearly 20 years — but the outcome was clear. It worked.</p>
+    </div>
+  </section>
+
+  <!-- Reflection -->
+  <section class="section fade-up">
+    <div class="section-label">What made this work</div>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Data before the tools existed</div>
+        <div class="finding-text">Built in 2007 — years before Power BI, Tableau or Looker. MapInfo and SQL Server were the entire stack. The constraints made the thinking more important than the technology</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">First heatmap management had seen</div>
+        <div class="finding-text">Seeing customers on a map for the first time changed how management thought about the business. Visualisation unlocked a conversation that a spreadsheet never could</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Combining unlikely data sources</div>
+        <div class="finding-text">Web scraping competitor sites, purchasing commercial statistical data, merging with internal CRM records — the insight came from the join, not from any single source</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Analysis that became operational</div>
+        <div class="finding-text">The most valuable outcome wasn't the presentation — it was turning the model into a daily planning tool that the sales team actually used in the field</div>
       </div>
     </div>
   </section>
@@ -145,15 +162,9 @@
 <footer>
   <div class="footer-inner">
     <div class="contact-links">
-      <a href="mailto:imre.tamas@gmail.com" class="contact-link">
-        <span class="contact-dot"></span> imre.tamas@gmail.com
-      </a>
-      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank" rel="noopener">
-        <span class="contact-dot"></span> LinkedIn
-      </a>
-      <a href="https://github.com/imrepocok" class="contact-link" target="_blank" rel="noopener">
-        <span class="contact-dot"></span> GitHub
-      </a>
+      <a href="mailto:imre.tamas@gmail.com" class="contact-link"><span class="contact-dot"></span> imre.tamas@gmail.com</a>
+      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank" rel="noopener"><span class="contact-dot"></span> LinkedIn</a>
+      <a href="https://github.com/imrepocok" class="contact-link" target="_blank" rel="noopener"><span class="contact-dot"></span> GitHub</a>
     </div>
     <span class="footer-copy mono">Berlin, Germany</span>
   </div>
