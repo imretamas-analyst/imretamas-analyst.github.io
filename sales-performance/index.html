@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sales Performance System — Tamás Imre</title>
-  <meta name="description" content="End-to-end sales performance and territory management system that reduced bonus processing from 5 days to 1 day." />
+  <title>Sales Performance & Territory System — Tamás Imre</title>
+  <meta name="description" content="A territory management system built to stop cherry-picking and measure true sales performance at UPC Broadband." />
   <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
@@ -21,145 +21,131 @@
   </div>
 </nav>
 
-<div class="container">
+<div class="container" style="padding-bottom:4rem;">
   <a href="/" class="back-link">← back to portfolio</a>
 
   <section class="project-hero fade-up">
-    <p class="project-hero-meta">UPC Broadband · Budapest · 2008</p>
+    <p class="project-hero-meta">UPC Broadband · Hungary · 2006–2007</p>
     <h1><strong>Sales Performance</strong><br>&amp; Territory Management System</h1>
     <p class="project-hero-desc">
-      Built an end-to-end system measuring sales rep performance by flat-level assignments and conversion rates. Automated bonus calculations, eliminated biased performance metrics, and reduced monthly processing time by 80%.
+      A sales agent ranked second on the leaderboard came to me with a problem — she had worked a smaller territory more thoroughly than anyone else,
+      yet the top-ranked agent was being rewarded for cherry-picking easy buildings while ignoring harder ones.
+      The existing paper-based system couldn't see any of this. I built one that could.
     </p>
     <div class="tag-row">
       <span class="tag">SQL Server</span>
-      <span class="tag">BRIO</span>
-      <span class="tag">Automation</span>
-      <span class="tag">Sales Analytics</span>
-      <span class="tag">Territory Management</span>
+      <span class="tag">System Design</span>
+      <span class="tag">Sales Operations</span>
+      <span class="tag">Performance Measurement</span>
     </div>
   </section>
 
-  <section class="section fade-up">
-    <div class="section-label">Project at a glance</div>
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-label">Processing time</div>
-        <div class="stat-value">80%</div>
-        <div class="stat-sub">reduction — 5 days → 1 day</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Manual hours saved</div>
-        <div class="stat-value">30h</div>
-        <div class="stat-sub">per month</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Bias eliminated</div>
-        <div class="stat-value">Yes</div>
-        <div class="stat-sub">cherry-picking removed</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Stack</div>
-        <div class="stat-value">SQL</div>
-        <div class="stat-sub">SQL Server · BRIO</div>
-      </div>
+  <!-- Stats -->
+  <div class="stat-grid fade-up">
+    <div class="stat-card">
+      <div class="stat-label">Core metric</div>
+      <div class="stat-value">Penetration</div>
+      <div class="stat-sub">customers / total flats</div>
     </div>
-  </section>
+    <div class="stat-card">
+      <div class="stat-label">Previous system</div>
+      <div class="stat-value">Paper</div>
+      <div class="stat-sub">printed lists, handwritten notes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Problem solved</div>
+      <div class="stat-value">Cherry-picking</div>
+      <div class="stat-sub">and duplicate territory conflicts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Outcome</div>
+      <div class="stat-value">Fair pay</div>
+      <div class="stat-sub">bonuses tied to real performance</div>
+    </div>
+  </div>
 
+  <!-- The problem -->
   <section class="section fade-up">
-    <div class="section-label">Problem</div>
+    <div class="section-label">The problem</div>
     <div class="content-block">
-      <h2>Manual, biased, and slow</h2>
-      <p>Sales bonus calculations at UPC Broadband were done manually every month — a process that took 5 to 6 working days and was prone to errors. Worse, the existing performance metrics allowed reps to cherry-pick the easiest territories, skewing results and making fair comparison impossible.</p>
-      <p>Management had no reliable way to compare rep performance across territories or identify where coverage gaps existed.</p>
+      <h2>The leaderboard was lying</h2>
+      <p>A sales agent came to me frustrated. She was ranked second on the monthly top-10 leaderboard — measured purely by number of closed deals. But she had been assigned a smaller territory: around 10 buildings with roughly 300 flats in total. She had worked that territory thoroughly, going door to door multiple times, returning to doors where nobody had answered, and significantly improving her penetration rate.</p>
+      <p>The agent ranked first had more closed deals in absolute terms — but his territory was roughly twice the size. More importantly, he was systematically visiting only the buildings and floors where deals were easy to close, then moving on. Customers would tell us he had promised to come back to finalise a deal — and never did. He had simply moved to an easier building. This is what we called cherry-picking.</p>
+      <p>The paper system we had couldn't detect any of this. Agents received printed lists, wrote their notes by hand, and returned the completed list when they were done. There was no way to compare performance fairly, no way to detect duplicate coverage, and no way to calculate penetration systematically.</p>
     </div>
   </section>
 
+  <!-- How it worked before -->
   <section class="section fade-up">
-    <div class="section-label">Solution</div>
+    <div class="section-label">How territory worked before</div>
     <div class="content-block">
-      <h2>Flat-level assignment tracking</h2>
-      <p>The system tracked performance at the individual flat (apartment unit) level — each rep was assigned specific flats, and conversions were measured against that exact territory. This eliminated the ability to cherry-pick easy areas and made performance metrics genuinely comparable.</p>
-    </div>
-
-    <div class="code-block">
-      <div class="code-block-label">SQL Server · rep_performance.sql</div>
-      <pre><span class="code-cm">-- Rep performance by assigned territory</span>
-<span class="code-kw">WITH</span> assignments <span class="code-kw">AS</span> (
-  <span class="code-kw">SELECT</span>
-    rep_id,
-    flat_id,
-    assignment_date,
-    <span class="code-fn">COUNT</span>(flat_id) <span class="code-kw">OVER</span> (
-      <span class="code-kw">PARTITION BY</span> rep_id
-    )               <span class="code-kw">AS</span> total_assigned_flats
-  <span class="code-kw">FROM</span> territory_assignments
-  <span class="code-kw">WHERE</span> month = @target_month
-),
-
-conversions <span class="code-kw">AS</span> (
-  <span class="code-kw">SELECT</span>
-    rep_id,
-    flat_id,
-    sale_date,
-    product_type,
-    contract_value
-  <span class="code-kw">FROM</span> sales
-  <span class="code-kw">WHERE</span> month = @target_month
-)
-
-<span class="code-kw">SELECT</span>
-  a.rep_id,
-  r.rep_name,
-  r.region,
-  a.total_assigned_flats,
-  <span class="code-fn">COUNT</span>(c.flat_id)          <span class="code-kw">AS</span> total_conversions,
-  <span class="code-fn">SUM</span>(c.contract_value)    <span class="code-kw">AS</span> total_revenue,
-
-  <span class="code-cm">-- Conversion rate against assigned territory</span>
-  <span class="code-fn">ROUND</span>(
-    <span class="code-fn">COUNT</span>(c.flat_id) * <span class="code-nu">100.0</span>
-      / <span class="code-fn">NULLIF</span>(a.total_assigned_flats, <span class="code-nu">0</span>),
-    <span class="code-nu">2</span>
-  )                          <span class="code-kw">AS</span> conversion_rate_pct,
-
-  <span class="code-cm">-- Bonus calculation</span>
-  <span class="code-kw">CASE</span>
-    <span class="code-kw">WHEN</span> conversion_rate_pct >= <span class="code-nu">15</span> <span class="code-kw">THEN</span> <span class="code-fn">SUM</span>(c.contract_value) * <span class="code-nu">0.08</span>
-    <span class="code-kw">WHEN</span> conversion_rate_pct >= <span class="code-nu">10</span> <span class="code-kw">THEN</span> <span class="code-fn">SUM</span>(c.contract_value) * <span class="code-nu">0.05</span>
-    <span class="code-kw">ELSE</span>                              <span class="code-fn">SUM</span>(c.contract_value) * <span class="code-nu">0.03</span>
-  <span class="code-kw">END AS</span> bonus_amount
-
-<span class="code-kw">FROM</span> assignments a
-<span class="code-kw">JOIN</span> reps r          <span class="code-kw">ON</span> a.rep_id = r.rep_id
-<span class="code-kw">LEFT JOIN</span> conversions c
-  <span class="code-kw">ON</span> a.rep_id = c.rep_id
-  <span class="code-kw">AND</span> a.flat_id = c.flat_id
-<span class="code-kw">GROUP BY</span>
-  a.rep_id, r.rep_name, r.region,
-  a.total_assigned_flats
-<span class="code-kw">ORDER BY</span> conversion_rate_pct <span class="code-kw">DESC</span></pre>
-    </div>
-
-    <div class="content-block">
-      <h2>BRIO frontend for management</h2>
-      <p>The SQL layer was surfaced through a BRIO reporting frontend, giving managers a monthly performance dashboard. Territory coverage gaps were visible at a glance, and the bonus figures were auto-calculated — no manual spreadsheet work required.</p>
+      <h2>Printed lists and handwritten notes</h2>
+      <p>The process was entirely manual. A manager would select a set of streets and buildings, print a list of all flats within them, and hand it to a sales agent. The agent would work through the list — knocking on doors, writing outcomes by hand — and return it once finished along with any signed contracts. The manager would then register the contracts in the CRM and issue a new list.</p>
+      <p>There were no tablets or mobile devices at the time. Everything was paper. The problems this created were significant: no real-time visibility into coverage, no way to calculate penetration accurately, no way to detect if an agent had kept a copy of a list and was working a territory that had since been reassigned to someone else, and no fair basis for comparing performance across agents with different territory sizes.</p>
     </div>
   </section>
 
+  <!-- Solution -->
   <section class="section fade-up">
-    <div class="section-label">Outcome</div>
+    <div class="section-label">The solution</div>
+    <div class="content-block">
+      <h2>A SQL-backed territory management system</h2>
+      <p>The foundation already existed — a SQL Server database containing every street, building and flat where UPC could provide services. This was the coverage universe. I built a system on top of it that digitalised the entire territory assignment and tracking workflow.</p>
+    </div>
+
     <div class="finding-grid">
       <div class="finding-card">
-        <div class="finding-title">80% time reduction</div>
-        <div class="finding-text">Monthly bonus processing dropped from 5–6 days to a single day — fully automated from source data</div>
+        <div class="finding-title">Batch territory assignment</div>
+        <div class="finding-text">Managers could select streets and buildings in bulk and assign the entire batch to a specific sales agent, with a deadline attached. No more manual list printing</div>
       </div>
       <div class="finding-card">
-        <div class="finding-title">Fair metrics</div>
-        <div class="finding-text">Flat-level tracking eliminated cherry-picking behaviour and made rep performance genuinely comparable</div>
+        <div class="finding-title">Penetration tracking</div>
+        <div class="finding-text">Once contracts were registered in the CRM, the system automatically calculated penetration — customers as a percentage of total flats — for every assigned territory</div>
       </div>
       <div class="finding-card">
-        <div class="finding-title">Coverage visibility</div>
-        <div class="finding-text">Management could identify underserved territories and rebalance assignments proactively</div>
+        <div class="finding-title">Duplicate detection</div>
+        <div class="finding-text">If an agent returned to a building that had already been reassigned to someone else — using a kept copy of an old list — the system flagged the conflict so managers could investigate</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Fair bonus calculation</div>
+        <div class="finding-text">Monthly incentive bonuses were tied to penetration rates rather than raw deal counts — rewarding thorough work over cherry-picking, and dramatically reducing manual calculation time</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">True performance reporting</div>
+        <div class="finding-text">For the first time, managers could compare agents fairly — adjusting for territory size, difficulty and time allocated. The leaderboard reflected real effort, not lucky territory draws</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Daily operations visibility</div>
+        <div class="finding-text">Management had a live view of which territories were active, which had been completed, which were approaching their deadlines and where coverage gaps existed</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reflection -->
+  <section class="section fade-up">
+    <div class="section-label">What this taught me</div>
+    <div class="content-block">
+      <h2>The best analysis starts with someone feeling something is unfair</h2>
+      <p>This project didn't start with a management request or a strategic initiative. It started with a sales agent who knew intuitively that the measurement system was wrong — and had the clarity to explain exactly why. My job was to listen carefully enough to understand the real problem, then build something that solved it structurally rather than just patching the symptom.</p>
+      <p>The insight — that raw deal count is a misleading metric without controlling for territory size — is obvious in retrospect. But it took someone close to the work to surface it. Good analysis often works this way: the people doing the job know where the measurement is broken. The analyst's role is to give that knowledge a precise form and build something durable around it.</p>
+    </div>
+
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-title">Metrics shape behaviour</div>
+        <div class="finding-text">The old leaderboard rewarded cherry-picking because it measured the wrong thing. Changing the metric changed how agents worked — without any new rules or enforcement</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Data as fairness infrastructure</div>
+        <div class="finding-text">The system didn't just improve reporting — it made the workplace fairer. Agents who worked hard were recognised. Agents who gamed the system were visible</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Building vs analysing</div>
+        <div class="finding-text">This was less a one-off analysis and more a product — something the team used every day. Designing it required thinking about workflow, not just data</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-title">Operational impact</div>
+        <div class="finding-text">The system replaced a fragile paper process with something reliable and repeatable — freeing up manager time, reducing errors and giving leadership a view of the business they had never had before</div>
       </div>
     </div>
   </section>
@@ -169,15 +155,9 @@ conversions <span class="code-kw">AS</span> (
 <footer>
   <div class="footer-inner">
     <div class="contact-links">
-      <a href="mailto:imre.tamas@gmail.com" class="contact-link">
-        <span class="contact-dot"></span> imre.tamas@gmail.com
-      </a>
-      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank" rel="noopener">
-        <span class="contact-dot"></span> LinkedIn
-      </a>
-      <a href="https://github.com/imretamas-analyst" class="contact-link" target="_blank" rel="noopener">
-        <span class="contact-dot"></span> GitHub
-      </a>
+      <a href="mailto:imre.tamas@gmail.com" class="contact-link"><span class="contact-dot"></span> imre.tamas@gmail.com</a>
+      <a href="https://linkedin.com/in/tamas-imre-analyst" class="contact-link" target="_blank" rel="noopener"><span class="contact-dot"></span> LinkedIn</a>
+      <a href="https://github.com/imretamas-analyst" class="contact-link" target="_blank" rel="noopener"><span class="contact-dot"></span> GitHub</a>
     </div>
     <span class="footer-copy mono">Berlin, Germany</span>
   </div>
